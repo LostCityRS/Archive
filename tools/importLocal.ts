@@ -1,4 +1,4 @@
-import { importJag, importOnDemand } from '#tools/import.js';
+import { importJag, importJs5, importOnDemand } from '#tools/import.js';
 
 const args = process.argv.slice(2);
 
@@ -10,7 +10,9 @@ if (args.length < 4) {
 try {
     const [source, game, build, era, timestamp, newspost] = args;
 
-    if (era === 'ondemand') {
+    if (era === 'js5') {
+        await importJs5(source, game, build, timestamp, newspost);
+    } else if (era === 'ondemand') {
         await importOnDemand(source, game, build, timestamp, newspost);
     } else if (era === 'jag') {
         await importJag(source, game, build, timestamp, newspost);

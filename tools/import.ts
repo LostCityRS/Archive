@@ -5,8 +5,10 @@ import { db } from '#/db/query.js';
 import FileStream from '#/io/FileStream.js';
 import Jagfile from '#/io/Jagfile.js';
 import Packet from '#/io/Packet.js';
+import Js5LocalDiskCache from '#/js5/Js5LocalDiskCache.js';
+import Js5Index from '#/js5/Js5Index.js';
 
-export async function createCache(game: string, build: string, era: string, timestamp?: string, newspost?: string) {
+async function createCache(game: string, build: string, era: string, timestamp?: string, newspost?: string) {
     if (era !== 'js5' && era !== 'ondemand' && era !== 'jag') {
         throw new Error(`Cache era must be js5, ondemand, or jag: "${era}" was provided`);
     }
@@ -26,6 +28,87 @@ export async function createCache(game: string, build: string, era: string, time
         .executeTakeFirstOrThrow();
 
     return Number(cache.insertId);
+}
+
+export async function importJs5(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(game, build, 'js5', timestamp, newspost);
+
+    const archives = fs.readFileSync(`${source}/main_file_cache.idx255`).length / 6;
+    const stream = new Js5LocalDiskCache(source, archives);
+
+    for (let archive = 0; archive < archives; archive++) {
+        const index = stream.read(255, archive);
+        if (!index) {
+            console.error(build, 'skipping archive', archive);
+            continue;
+        }
+
+        const js5 = new Js5Index(index);
+
+        await db
+            .insertInto('data_js5')
+            .ignore()
+            .values({
+                game,
+                archive: 255,
+                group: archive,
+                version: js5.version,
+                crc: js5.crc,
+                bytes: Buffer.from(index),
+                len: index.length
+            })
+            .execute();
+
+        await db
+            .insertInto('cache_js5')
+            .values({
+                cache_id: cacheId,
+                archive: 255,
+                group: archive,
+                version: js5.version,
+                crc: js5.crc
+            })
+            .execute();
+
+        for (let i = 0; i < js5.size; i++) {
+            const group = js5.groupIds[i];
+            const version = js5.groupVersion[group];
+            const crc = js5.groupChecksum[group];
+
+            if (stream.has(archive, group)) {
+                const buf = stream.read(archive, group)!;
+                const checksum = Packet.getcrc(buf, 0, buf.length - 2);
+                // todo: configure trailer length (may be 4 bytes now)
+
+                if (checksum === crc) {
+                    await db
+                        .insertInto('data_js5')
+                        .ignore()
+                        .values({
+                            game,
+                            archive,
+                            group,
+                            version,
+                            crc,
+                            bytes: Buffer.from(buf),
+                            len: buf.length
+                        })
+                        .execute();
+                }
+            }
+
+            await db
+                .insertInto('cache_js5')
+                .values({
+                    cache_id: cacheId,
+                    archive,
+                    group,
+                    version,
+                    crc
+                })
+                .execute();
+        }
+    }
 }
 
 export async function importOnDemand(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
@@ -159,9 +242,10 @@ export async function importOnDemand(source: string, game: string, build: string
                 })
                 .execute();
 
-            const buf = stream.read(archive + 1, file);
-            if (buf) {
+            if (stream.has(archive + 1, file)) {
+                const buf = stream.read(archive + 1, file)!;
                 const checksum = Packet.getcrc(buf, 0, buf.length - 2);
+
                 if (checksum === crc) {
                     await db
                         .insertInto('data_ondemand')

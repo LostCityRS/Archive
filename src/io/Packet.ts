@@ -17,16 +17,16 @@ export default class Packet {
         }
     }
 
-    static getcrc(src: Uint8Array, offset: number, length: number): number {
+    static getcrc(src: Uint8Array, off: number, len: number): number {
         let crc = 0xffffffff;
-        for (let i = offset; i < length; i++) {
+        for (let i = off; i < len; i++) {
             crc = (crc >>> 8) ^ this.crctable[(crc ^ src[i]) & 0xff];
         }
         return ~crc;
     }
 
-    static checkcrc(src: Uint8Array, offset: number, length: number, expected: number = 0): boolean {
-        return Packet.getcrc(src, offset, length) == expected;
+    static checkcrc(src: Uint8Array, off: number, len: number, expected: number = 0): boolean {
+        return Packet.getcrc(src, off, len) == expected;
     }
 
     private readonly view: DataView;
@@ -93,13 +93,13 @@ export default class Packet {
         return result;
     }
 
-    gdata(len: number, off: number, dst: Uint8Array | Int8Array): void {
+    gdata(dst: Uint8Array | Int8Array, off: number, len: number): void {
         dst.set(this.data.subarray(this.pos, this.pos + len), off);
         this.pos += len - off;
     }
 
-    pdata(src: Uint8Array, offset: number, length: number): void {
-        this.data.set(src.subarray(offset, offset + length), this.pos);
-        this.pos += length - offset;
+    pdata(src: Uint8Array, off: number, len: number): void {
+        this.data.set(src.subarray(off, off + len), this.pos);
+        this.pos += len - off;
     }
 }

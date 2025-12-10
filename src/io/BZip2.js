@@ -98,7 +98,17 @@ function bwtReverse(src, primary) {
     return ret;
 }
 
-export function bunzip2(bytes, checkMagic = false, checkCRC = false) {
+export function bunzip2(bytes, checkMagic = false, checkCRC = false, prependHeader = false) {
+    if (prependHeader) {
+        const temp = new Uint8Array(4 + bytes.length);
+        temp[0] = 'B'.charCodeAt(0);
+        temp[1] = 'Z'.charCodeAt(0);
+        temp[2] = 'h'.charCodeAt(0);
+        temp[3] = '1'.charCodeAt(0);
+        temp.set(bytes, 4);
+        bytes = temp;
+    }
+
     let index = 0;
     let bitfield = 0;
     let bits = 0;
