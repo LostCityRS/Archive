@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { zipSync } from 'fflate';
 import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
@@ -82,20 +83,60 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    // produce a tarball of individual cache files for the user
-    app.get('/:id/files.tar.gz', async (req: any, reply) => {
+    // produce a zip of individual cache files for the user
+    app.get('/:id/files.zip', async (req: any, reply) => {
+        const { id } = req.params;
+
+        if (id.length === 0) {
+            throw new Error('Missing route parameters');
+        }
+
+        const cache = await db
+            .selectFrom('cache')
+            .selectAll()
+            .where('id', '=', id)
+            .executeTakeFirstOrThrow();
+
+        const zip: Record<string, Buffer> = {};
+
+        // todo: js5, jag
+        if (cache.ondemand) {
+            const cacheData = await db
+                .selectFrom('cache_ondemand')
+                .leftJoin(
+                    'data_ondemand',
+                    (join) => join
+                        .on('data_ondemand.game', '=', cache.game)
+                        .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                        .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                        .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
+                        .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_ondemand.archive', 'cache_ondemand.file', 'data_ondemand.bytes'])
+                .execute();
+
+            for (const data of cacheData) {
+                if (data.bytes) {
+                    zip[`${data.archive}/${data.file}.dat`] = data.bytes;
+                }
+            }
+        }
+
+        reply.status(200);
+        reply.header('Content-Disposition', `attachment; filename="cache-${cache.game}-${cache.build}-files-lostcity#${cache.id}.zip"`);
+        reply.send(zipSync(zip, { level: 0 }));
     });
 
-    // produce main_file_cache.dat2 and zip it for the user (cache_js5)
-    app.get('/:id/js5/cache.zip', async (req: any, reply) => {
+    // produce a cache in the client format and zip it for the user
+    app.get('/:id/cache.zip', async (req: any, reply) => {
+        // todo: main_file_cache.dat
+        // todo: main_file_cache.dat2 (expose control over packing music to fit large caches?)
+        // todo: offer jcache too?
     });
 
     // produce individual cache files for the user (cache_js5)
     app.get('/:id/js5/:archive/:group', async (req: any, reply) => {
-    });
-
-    // produce main_file_cache.dat and zip it for the user (cache_ondemand)
-    app.get('/:id/ondemand/cache.zip', async (req: any, reply) => {
     });
 
     // produce individual cache files for the user (cache_ondemand)
