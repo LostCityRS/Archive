@@ -76,7 +76,7 @@ async function importOnDemand(source: string, game: string, build: string, era: 
                 cache_id: cacheId,
                 archive: 0,
                 file: i,
-                version: -1,
+                version: 0,
                 crc,
                 essential: 1
             })
