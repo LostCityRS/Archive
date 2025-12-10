@@ -4,6 +4,33 @@ import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
 
+async function getJs5Files(cache: { id: number, game: string }) {
+    return db
+        .selectFrom('cache_js5')
+        .select(['archive', 'group', 'version', 'crc'])
+        .select(sql.raw('1').as('essential'))
+        .select((eb) => [
+            eb
+                .case()
+                .when(
+                    eb.exists(
+                        eb.selectFrom('data_js5')
+                            .select(sql.raw('1').as('found'))
+                            .where('data_js5.game', '=', cache.game)
+                            .whereRef('data_js5.archive', '=', 'cache_js5.archive')
+                            .whereRef('data_js5.group', '=', 'cache_js5.group')
+                            .whereRef('data_js5.crc', '=', 'cache_js5.crc')
+                    )
+                )
+                .then(1)
+                .else(0)
+                .end()
+                .as('exists')
+        ])
+        .where('cache_id', '=', cache.id)
+        .execute();
+}
+
 async function getOnDemandFiles(cache: { id: number, game: string }) {
     return db
         .selectFrom('cache_ondemand')
@@ -57,7 +84,9 @@ async function getJagFiles(cache: { id: number, game: string }) {
 }
 
 async function getFiles(cache: { id: number, game: string, js5: number, ondemand: number, jag: number }) {
-    if (cache.ondemand) {
+    if (cache.js5) {
+        return getJs5Files(cache);
+    } else if (cache.ondemand) {
         return getOnDemandFiles(cache);
     } else if (cache.jag) {
         return getJagFiles(cache);

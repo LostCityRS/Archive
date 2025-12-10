@@ -35,7 +35,7 @@ model submission {
 // 2006+
 model data_js5 {
     game    String // to save space consider making this another table and linking by id?
-    archive Int    @db.TinyInt // archives are 0-255
+    archive Int    @db.UnsignedTinyInt // archives are 0-255
     group   Int // groups can be >65535
     version Int // versions can be >65535 (timestamps)
     crc     Int
@@ -62,9 +62,9 @@ model cache_js5 {
 // 2004-2006
 model data_ondemand {
     game    String // to save space consider making this another table and linking by id?
-    archive Int    @db.TinyInt // archives are 0-255
-    file    Int    @db.SmallInt // files are 0-65535
-    version Int    @db.SmallInt // versions are 0-65535
+    archive Int    @db.UnsignedTinyInt // archives are 0-255
+    file    Int    @db.UnsignedSmallInt // files are 0-65535
+    version Int    @db.UnsignedSmallInt // versions are 0-65535
     crc     Int
     bytes   Bytes  @db.MediumBlob
     len     Int

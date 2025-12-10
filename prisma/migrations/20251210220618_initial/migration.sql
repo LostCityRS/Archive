@@ -26,7 +26,7 @@ CREATE TABLE `submission` (
 -- CreateTable
 CREATE TABLE `data_js5` (
     `game` VARCHAR(191) NOT NULL,
-    `archive` TINYINT NOT NULL,
+    `archive` TINYINT UNSIGNED NOT NULL,
     `group` INTEGER NOT NULL,
     `version` INTEGER NOT NULL,
     `crc` INTEGER NOT NULL,
@@ -54,9 +54,9 @@ CREATE TABLE `cache_js5` (
 -- CreateTable
 CREATE TABLE `data_ondemand` (
     `game` VARCHAR(191) NOT NULL,
-    `archive` TINYINT NOT NULL,
-    `file` SMALLINT NOT NULL,
-    `version` SMALLINT NOT NULL,
+    `archive` TINYINT UNSIGNED NOT NULL,
+    `file` SMALLINT UNSIGNED NOT NULL,
+    `version` SMALLINT UNSIGNED NOT NULL,
     `crc` INTEGER NOT NULL,
     `bytes` MEDIUMBLOB NOT NULL,
     `len` INTEGER NOT NULL,
