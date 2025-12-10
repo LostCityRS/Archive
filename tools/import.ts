@@ -4,7 +4,7 @@ import FileStream from '#/io/FileStream.js';
 import Jagfile from '#/io/Jagfile.js';
 import Packet from '#/io/Packet.js';
 
-async function createCache(game: string, build: string, era: string, timestamp?: string, newspost?: string) {
+export async function createCache(game: string, build: string, era: string, timestamp?: string, newspost?: string) {
     if (era !== 'js5' && era !== 'ondemand' && era !== 'jag') {
         throw new Error(`Cache era must be js5, ondemand, or jag: "${era}" was provided`);
     }
@@ -26,7 +26,7 @@ async function createCache(game: string, build: string, era: string, timestamp?:
     return Number(cache.insertId);
 }
 
-async function importOnDemand(source: string, game: string, build: string, era: string, timestamp?: string, newspost?: string) {
+export async function importOnDemand(source: string, game: string, build: string, era: string, timestamp?: string, newspost?: string) {
     if (era === 'js5' || era === 'jag') {
         // todo: eventually support these
         return;
@@ -184,19 +184,3 @@ async function importOnDemand(source: string, game: string, build: string, era: 
         }
     }
 }
-
-const args = process.argv.slice(2);
-
-if (args.length < 4) {
-    process.exit(1);
-}
-
-try {
-    await importOnDemand(args[0], args[1], args[2], args[3], args[4], args[5]);
-} catch (err) {
-    if (err instanceof Error) {
-        console.log(err.message);
-    }
-}
-
-process.exit(0);
