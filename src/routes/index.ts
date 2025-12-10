@@ -29,18 +29,19 @@ export default async function (app: FastifyInstance) {
 
         const cache = await db.selectFrom('cache').selectAll().where('build', '=', build).executeTakeFirstOrThrow();
         const files = await db
-            .selectFrom('cache_file')
-            .select(['archive', 'file', 'version', 'crc'])
+            .selectFrom('cache_ondemand')
+            .select(['archive', 'file', 'version', 'crc', 'essential'])
             .select((eb) => [
                 eb
                     .case()
                     .when(
                         eb.exists(
-                            eb.selectFrom('data')
+                            eb.selectFrom('data_ondemand')
                                 .select(sql.raw('1').as('found'))
-                                .whereRef('data.archive', '=', 'cache_file.archive')
-                                .whereRef('data.file', '=', 'cache_file.file')
-                                .whereRef('data.crc', '=', 'cache_file.crc')
+                                .where('data_ondemand.game', '=', cache.game)
+                                .whereRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                                .whereRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                                .whereRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
                         )
                     )
                     .then(1)
@@ -51,12 +52,14 @@ export default async function (app: FastifyInstance) {
             .where('cache_id', '=', cache.id)
             .execute();
 
-        const missing = files.filter(f => !f.exists);
+        const missing = files.filter(f => !f.exists && f.essential);
+        const allMissing = files.filter(f => !f.exists);
 
         return reply.view('cache/build', {
             cache,
             files,
-            missing
+            missing,
+            allMissing
         });
     });
 

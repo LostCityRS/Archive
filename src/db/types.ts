@@ -6,9 +6,27 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type cache = {
     id: Generated<number>;
+    game: string;
     build: string;
+    timestamp: Timestamp | null;
+    newspost: string | null;
+    js5: number;
+    ondemand: number;
+    jag: number;
 };
-export type cache_file = {
+export type cache_jag = {
+    cache_id: number;
+    name: string;
+    crc: number;
+};
+export type cache_js5 = {
+    cache_id: number;
+    archive: number;
+    group: number;
+    version: number;
+    crc: number;
+};
+export type cache_ondemand = {
     cache_id: number;
     archive: number;
     file: number;
@@ -16,17 +34,45 @@ export type cache_file = {
     crc: number;
     essential: number;
 };
-export type data = {
-    id: Generated<number>;
+export type data_jag = {
+    game: string;
+    name: string;
+    crc: number;
+    bytes: Buffer;
+    len: number;
+};
+export type data_js5 = {
+    game: string;
+    archive: number;
+    group: number;
+    version: number;
+    crc: number;
+    bytes: Buffer;
+    len: number;
+};
+export type data_ondemand = {
+    game: string;
     archive: number;
     file: number;
     version: number;
-    data: Buffer;
     crc: number;
+    bytes: Buffer;
     len: number;
+};
+export type submission = {
+    uuid: string;
+    game: string;
+    attribution: string | null;
+    ip: string;
+    user_agent: string;
 };
 export type DB = {
     cache: cache;
-    cache_file: cache_file;
-    data: data;
+    cache_jag: cache_jag;
+    cache_js5: cache_js5;
+    cache_ondemand: cache_ondemand;
+    data_jag: data_jag;
+    data_js5: data_js5;
+    data_ondemand: data_ondemand;
+    submission: submission;
 };

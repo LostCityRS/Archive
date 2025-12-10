@@ -14,7 +14,9 @@
 <body class="bg-gray-800 text-white">
     <%= cache.build %><br>
 
-    <%= missing.length %> missing files<br>
+    <%= files.length %> files<br>
+    missing <%= missing.length %> essential files<br>
+    missing <%= allMissing.length %> files total<br>
 
     <% for (const file of missing) { %>
         Archive: <%= file.archive %><br>
@@ -22,6 +24,7 @@
         Version: <%= file.version %><br>
         CRC: <%= file.crc %><br>
         Exists: <%= file.exists %><br>
+        Essential: <%= file.essential %><br>
         <br>
     <% } %>
 </body>

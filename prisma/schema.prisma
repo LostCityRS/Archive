@@ -12,87 +12,98 @@ datasource db {
 }
 
 model cache {
-    id    Int    @id @default(autoincrement())
-    build String
+    id Int @id @default(autoincrement())
 
-    // legacy Boolean
-    // js5 Boolean
+    game      String
+    build     String
+    timestamp DateTime?
+    newspost  String?
+
+    js5      Boolean
+    ondemand Boolean
+    jag      Boolean
 }
 
-model cache_file {
+model submission {
+    uuid        String  @id
+    game        String
+    attribution String?
+    ip          String
+    user_agent  String
+}
+
+// 2006+
+model data_js5 {
+    game    String // to save space consider making this another table and linking by id?
+    archive Int    @db.TinyInt // archives are 0-255
+    group   Int // groups can be >65535
+    version Int // versions can be >65535 (timestamps)
+    crc     Int
+    bytes   Bytes  @db.MediumBlob
+    len     Int
+
+    @@id([game, archive, group, version, crc])
+    @@index([game, archive]) // fast lookup by game,archive
+    @@index([game, archive, group]) // fast lookup by game,archive,group
+    @@index([game, archive, group, version]) // fast lookup by game,archive,group,version
+    @@index([game, archive, crc]) // fast lookup by game,archive,crc
+}
+
+model cache_js5 {
     cache_id Int
     archive  Int
-    file     Int
+    group    Int
+    version  Int
+    crc      Int
 
-    version Int
+    @@id([cache_id, archive, group])
+}
+
+// 2004-2006
+model data_ondemand {
+    game    String // to save space consider making this another table and linking by id?
+    archive Int    @db.TinyInt // archives are 0-255
+    file    Int    @db.SmallInt // files are 0-65535
+    version Int    @db.SmallInt // versions are 0-65535
     crc     Int
+    bytes   Bytes  @db.MediumBlob
+    len     Int
 
+    @@id([game, archive, file, version, crc])
+    @@index([game, archive]) // fast lookup by game,archive
+    @@index([game, archive, file]) // fast lookup by game,archive,file
+    @@index([game, archive, file, version]) // fast lookup by game,archive,file,version
+    @@index([game, archive, crc]) // fast lookup by game,archive,crc
+}
+
+model cache_ondemand {
+    cache_id  Int
+    archive   Int
+    file      Int
+    version   Int
+    crc       Int
     essential Boolean
 
     @@id([cache_id, archive, file])
-    @@index([cache_id])
+    @@index([cache_id, archive, essential]) // fast lookup by cache_id,archive,essential
 }
 
-model data {
-    id Int @id @default(autoincrement())
+// 2001-2004
+model data_jag {
+    game  String // to save space consider making this another table and linking by id?
+    name  String
+    crc   Int
+    bytes Bytes  @db.MediumBlob
+    len   Int
 
-    archive Int
-    file    Int
-
-    version Int
-    data    Bytes @db.MediumBlob
-    crc     Int
-    len     Int
-
-    // @@index([archive, file])
-    // @@index([archive, crc])
-    @@index([archive, file, crc])
+    @@id([game, name, crc])
+    @@index([game, name]) // fast lookup by game,name
 }
 
-// model cache_file_legacy {
-//     cache_id Int
+model cache_jag {
+    cache_id Int
+    name     String
+    crc      Int
 
-//     name String
-//     crc  Int
-
-//     @@id([cache_id, name, crc])
-// }
-
-// model data_legacy {
-//     id Int @id @default(autoincrement())
-
-//     name String
-
-//     data Bytes @db.MediumBlob
-//     len  Int
-//     crc  Int
-
-//     @@index([name])
-//     @@index([crc])
-// }
-
-// model cache_file_js5 {
-//     cache_id Int
-//     archive Int
-//     group Int
-
-//     version Int
-//     crc  Int
-
-//     @@id([cache_id, archive, group])
-// }
-
-// model data_js5 {
-//     id Int @id @default(autoincrement())
-
-//     archive Int
-//     group Int
-
-//     version Int
-//     data Bytes @db.MediumBlob
-//     crc  Int
-//     len  Int
-
-//     @@index([archive, group])
-//     @@index([archive, crc])
-// }
+    @@id([cache_id, name, crc])
+}
