@@ -6,7 +6,7 @@ export type Timestamp = ColumnType<Date, Date | string, Date | string>;
 
 export type cache = {
     id: Generated<number>;
-    game: string;
+    game_id: number;
     build: string;
     timestamp: Timestamp | null;
     newspost: string | null;
@@ -35,14 +35,14 @@ export type cache_ondemand = {
     essential: number;
 };
 export type data_jag = {
-    game: string;
+    game_id: number;
     name: string;
     crc: number;
     bytes: Buffer;
     len: number;
 };
 export type data_js5 = {
-    game: string;
+    game_id: number;
     archive: number;
     group: number;
     version: number;
@@ -51,7 +51,7 @@ export type data_js5 = {
     len: number;
 };
 export type data_ondemand = {
-    game: string;
+    game_id: number;
     archive: number;
     file: number;
     version: number;
@@ -59,9 +59,13 @@ export type data_ondemand = {
     bytes: Buffer;
     len: number;
 };
+export type game = {
+    id: Generated<number>;
+    name: string;
+    display_name: string;
+};
 export type submission = {
     uuid: string;
-    game: string;
     attribution: string | null;
     ip: string;
     user_agent: string;
@@ -74,5 +78,6 @@ export type DB = {
     data_jag: data_jag;
     data_js5: data_js5;
     data_ondemand: data_ondemand;
+    game: game;
     submission: submission;
 };

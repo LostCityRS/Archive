@@ -15,7 +15,6 @@ jag: boolean - read from cache_jag/data_jag table
 submission - user submitted cache for review, stored on filesystem?
 ```
 uuid: string
-game: string
 attribution: string | null
 ip: string
 user_agent: string

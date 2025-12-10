@@ -1,7 +1,16 @@
 -- CreateTable
+CREATE TABLE `game` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(191) NOT NULL,
+    `display_name` VARCHAR(191) NOT NULL,
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `cache` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
-    `game` VARCHAR(191) NOT NULL,
+    `game_id` INTEGER NOT NULL,
     `build` VARCHAR(191) NOT NULL,
     `timestamp` DATETIME(3) NULL,
     `newspost` VARCHAR(191) NULL,
@@ -15,7 +24,6 @@ CREATE TABLE `cache` (
 -- CreateTable
 CREATE TABLE `submission` (
     `uuid` VARCHAR(191) NOT NULL,
-    `game` VARCHAR(191) NOT NULL,
     `attribution` VARCHAR(191) NULL,
     `ip` VARCHAR(191) NOT NULL,
     `user_agent` VARCHAR(191) NOT NULL,
@@ -25,19 +33,19 @@ CREATE TABLE `submission` (
 
 -- CreateTable
 CREATE TABLE `data_js5` (
-    `game` VARCHAR(191) NOT NULL,
+    `game_id` INTEGER NOT NULL,
     `archive` TINYINT UNSIGNED NOT NULL,
-    `group` INTEGER NOT NULL,
-    `version` INTEGER NOT NULL,
+    `group` INTEGER UNSIGNED NOT NULL,
+    `version` INTEGER UNSIGNED NOT NULL,
     `crc` INTEGER NOT NULL,
     `bytes` MEDIUMBLOB NOT NULL,
     `len` INTEGER NOT NULL,
 
-    INDEX `data_js5_game_archive_idx`(`game`, `archive`),
-    INDEX `data_js5_game_archive_group_idx`(`game`, `archive`, `group`),
-    INDEX `data_js5_game_archive_group_version_idx`(`game`, `archive`, `group`, `version`),
-    INDEX `data_js5_game_archive_crc_idx`(`game`, `archive`, `crc`),
-    PRIMARY KEY (`game`, `archive`, `group`, `version`, `crc`)
+    INDEX `data_js5_game_id_archive_idx`(`game_id`, `archive`),
+    INDEX `data_js5_game_id_archive_group_idx`(`game_id`, `archive`, `group`),
+    INDEX `data_js5_game_id_archive_group_version_idx`(`game_id`, `archive`, `group`, `version`),
+    INDEX `data_js5_game_id_archive_crc_idx`(`game_id`, `archive`, `crc`),
+    PRIMARY KEY (`game_id`, `archive`, `group`, `version`, `crc`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -53,7 +61,7 @@ CREATE TABLE `cache_js5` (
 
 -- CreateTable
 CREATE TABLE `data_ondemand` (
-    `game` VARCHAR(191) NOT NULL,
+    `game_id` INTEGER NOT NULL,
     `archive` TINYINT UNSIGNED NOT NULL,
     `file` SMALLINT UNSIGNED NOT NULL,
     `version` SMALLINT UNSIGNED NOT NULL,
@@ -61,11 +69,11 @@ CREATE TABLE `data_ondemand` (
     `bytes` MEDIUMBLOB NOT NULL,
     `len` INTEGER NOT NULL,
 
-    INDEX `data_ondemand_game_archive_idx`(`game`, `archive`),
-    INDEX `data_ondemand_game_archive_file_idx`(`game`, `archive`, `file`),
-    INDEX `data_ondemand_game_archive_file_version_idx`(`game`, `archive`, `file`, `version`),
-    INDEX `data_ondemand_game_archive_crc_idx`(`game`, `archive`, `crc`),
-    PRIMARY KEY (`game`, `archive`, `file`, `version`, `crc`)
+    INDEX `data_ondemand_game_id_archive_idx`(`game_id`, `archive`),
+    INDEX `data_ondemand_game_id_archive_file_idx`(`game_id`, `archive`, `file`),
+    INDEX `data_ondemand_game_id_archive_file_version_idx`(`game_id`, `archive`, `file`, `version`),
+    INDEX `data_ondemand_game_id_archive_crc_idx`(`game_id`, `archive`, `crc`),
+    PRIMARY KEY (`game_id`, `archive`, `file`, `version`, `crc`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
@@ -83,14 +91,14 @@ CREATE TABLE `cache_ondemand` (
 
 -- CreateTable
 CREATE TABLE `data_jag` (
-    `game` VARCHAR(191) NOT NULL,
+    `game_id` INTEGER NOT NULL,
     `name` VARCHAR(191) NOT NULL,
     `crc` INTEGER NOT NULL,
     `bytes` MEDIUMBLOB NOT NULL,
     `len` INTEGER NOT NULL,
 
-    INDEX `data_jag_game_name_idx`(`game`, `name`),
-    PRIMARY KEY (`game`, `name`, `crc`)
+    INDEX `data_jag_game_id_name_idx`(`game_id`, `name`),
+    PRIMARY KEY (`game_id`, `name`, `crc`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable

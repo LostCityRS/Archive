@@ -26,15 +26,13 @@
             <br>
         <% } %>
     <% } else if (cache.ondemand) { %>
-        missing <%= missing.length %> essential files<br>
-        missing <%= allMissing.length %> files total:<br>
+        missing <%= missing.length %> essential files:<br>
 
         <% for (const file of missing) { %>
             Archive: <%= file.archive %><br>
             File: <%= file.file %><br>
             Version: <%= file.version %><br>
             CRC: <%= file.crc %><br>
-            Essential: <%= file.essential %><br>
             <br>
         <% } %>
     <% } else if (cache.jag) { %>

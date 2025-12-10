@@ -8,15 +8,21 @@ import Packet from '#/io/Packet.js';
 import Js5LocalDiskCache from '#/js5/Js5LocalDiskCache.js';
 import Js5Index from '#/js5/Js5Index.js';
 
-async function createCache(game: string, build: string, era: string, timestamp?: string, newspost?: string) {
+async function createCache(gameName: string, build: string, era: string, timestamp?: string, newspost?: string) {
     if (era !== 'js5' && era !== 'ondemand' && era !== 'jag') {
         throw new Error(`Cache era must be js5, ondemand, or jag: "${era}" was provided`);
     }
 
+    const game = await db
+        .selectFrom('game')
+        .selectAll()
+        .where('name', '=', gameName)
+        .executeTakeFirstOrThrow();
+
     const cache = await db
         .insertInto('cache')
         .values({
-            game,
+            game_id: game.id,
             build,
             timestamp,
             newspost,
@@ -30,8 +36,14 @@ async function createCache(game: string, build: string, era: string, timestamp?:
     return Number(cache.insertId);
 }
 
-export async function importJs5(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
-    const cacheId = await createCache(game, build, 'js5', timestamp, newspost);
+export async function importJs5(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(gameName, build, 'js5', timestamp, newspost);
+
+    const game = await db
+        .selectFrom('game')
+        .selectAll()
+        .where('name', '=', gameName)
+        .executeTakeFirstOrThrow();
 
     const archives = fs.readFileSync(`${source}/main_file_cache.idx255`).length / 6;
     const stream = new Js5LocalDiskCache(source, archives);
@@ -49,7 +61,7 @@ export async function importJs5(source: string, game: string, build: string, tim
             .insertInto('data_js5')
             .ignore()
             .values({
-                game,
+                game_id: game.id,
                 archive: 255,
                 group: archive,
                 version: js5.version,
@@ -85,7 +97,7 @@ export async function importJs5(source: string, game: string, build: string, tim
                         .insertInto('data_js5')
                         .ignore()
                         .values({
-                            game,
+                            game_id: game.id,
                             archive,
                             group,
                             version,
@@ -111,8 +123,14 @@ export async function importJs5(source: string, game: string, build: string, tim
     }
 }
 
-export async function importOnDemand(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
-    const cacheId = await createCache(game, build, 'ondemand', timestamp, newspost);
+export async function importOnDemand(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(gameName, build, 'ondemand', timestamp, newspost);
+
+    const game = await db
+        .selectFrom('game')
+        .selectAll()
+        .where('name', '=', gameName)
+        .executeTakeFirstOrThrow();
 
     const stream = new FileStream(source);
 
@@ -140,7 +158,7 @@ export async function importOnDemand(source: string, game: string, build: string
             .insertInto('data_ondemand')
             .ignore()
             .values({
-                game,
+                game_id: game.id,
                 archive: 0,
                 file: i,
                 version: 0,
@@ -251,7 +269,7 @@ export async function importOnDemand(source: string, game: string, build: string
                         .insertInto('data_ondemand')
                         .ignore()
                         .values({
-                            game,
+                            game_id: game.id,
                             archive: archive + 1,
                             file,
                             version,
@@ -266,8 +284,14 @@ export async function importOnDemand(source: string, game: string, build: string
     }
 }
 
-export async function importJag(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
-    const cacheId = await createCache(game, build, 'jag', timestamp, newspost);
+export async function importJag(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(gameName, build, 'jag', timestamp, newspost);
+
+    const game = await db
+        .selectFrom('game')
+        .selectAll()
+        .where('name', '=', gameName)
+        .executeTakeFirstOrThrow();
 
     const files = fs.readdirSync(source);
     for (const file of files) {
@@ -280,7 +304,7 @@ export async function importJag(source: string, game: string, build: string, tim
             .insertInto('data_jag')
             .ignore()
             .values({
-                game,
+                game_id: game.id,
                 name: file,
                 crc,
                 bytes: Buffer.from(buf),
