@@ -11,7 +11,7 @@ if (args.length < 3) {
 }
 
 try {
-    const build = args[1];
+    const [game, build, era, timestamp, newspost] = args;
 
     if (!fs.existsSync('data')) {
         fs.mkdirSync('data');
@@ -34,7 +34,9 @@ try {
         }
     }
 
-    await importOnDemand(`data/${build}`, args[0], build, args[2], args[3], args[4]);
+    if (era === 'ondemand') {
+        await importOnDemand(`data/${build}`, game, build, timestamp, newspost);
+    }
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);
