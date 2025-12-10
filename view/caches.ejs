@@ -18,6 +18,9 @@
                 <thead class="bg-neutral-secondary-soft border-b border-gray-600">
                     <tr>
                         <th scope="col" class="px-6 py-3 font-medium">
+                            Game
+                        </th>
+                        <th scope="col" class="px-6 py-3 font-medium">
                             Build
                         </th>
                         <th scope="col" class="px-6 py-3 font-medium">
@@ -30,14 +33,17 @@
                 <tbody>
                     <% for (cache of caches) { %>
                         <tr class="odd:bg-gray-700/50 even:bg-gray-600/50 border-b border-gray-600">
-                            <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap w-1/8">
+                            <td class="px-6 py-4 w-1/8">
+                                <%= cache.game %>
+                            </td>
+                            <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
                                 <%= cache.build %>
                             </th>
                             <td class="px-6 py-4">
                                 June 13, 2005
                             </td>
                             <td class="px-6 py-4 w-1/8">
-                                <a href="/caches/<%= cache.build %>">More Info</a>
+                                <a href="/caches/<%= cache.game %>/<%= cache.build %>">More Info</a>
                             </td>
                         </tr>
                     <% } %>
