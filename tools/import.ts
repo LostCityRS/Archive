@@ -1,3 +1,5 @@
+import fs from 'fs';
+
 import { db } from '#/db/query.js';
 
 import FileStream from '#/io/FileStream.js';
@@ -26,13 +28,8 @@ export async function createCache(game: string, build: string, era: string, time
     return Number(cache.insertId);
 }
 
-export async function importOnDemand(source: string, game: string, build: string, era: string, timestamp?: string, newspost?: string) {
-    if (era === 'js5' || era === 'jag') {
-        // todo: eventually support these
-        return;
-    }
-
-    const cacheId = await createCache(game, build, era, timestamp, newspost);
+export async function importOnDemand(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(game, build, 'ondemand', timestamp, newspost);
 
     const stream = new FileStream(source);
 
@@ -182,5 +179,38 @@ export async function importOnDemand(source: string, game: string, build: string
                 }
             }
         }
+    }
+}
+
+export async function importJag(source: string, game: string, build: string, timestamp?: string, newspost?: string) {
+    const cacheId = await createCache(game, build, 'jag', timestamp, newspost);
+
+    const files = fs.readdirSync(source);
+    for (const file of files) {
+        console.log(build, file);
+
+        const buf = fs.readFileSync(`${source}/${file}`);
+        const crc = Packet.getcrc(buf, 0, buf.length);
+
+        await db
+            .insertInto('data_jag')
+            .ignore()
+            .values({
+                game,
+                name: file,
+                crc,
+                bytes: Buffer.from(buf),
+                len: buf.length
+            })
+            .execute();
+
+        await db
+            .insertInto('cache_jag')
+            .values({
+                cache_id: cacheId,
+                name: file,
+                crc
+            })
+            .execute();
     }
 }

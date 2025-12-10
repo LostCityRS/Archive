@@ -30,6 +30,42 @@ async function getOnDemandFiles(cache: { id: number, game: string }) {
         .execute();
 }
 
+async function getJagFiles(cache: { id: number, game: string }) {
+    return db
+        .selectFrom('cache_jag')
+        .select(['name', 'crc'])
+        .select(sql.raw('1').as('essential'))
+        .select((eb) => [
+            eb
+                .case()
+                .when(
+                    eb.exists(
+                        eb.selectFrom('data_jag')
+                            .select(sql.raw('1').as('found'))
+                            .where('data_jag.game', '=', cache.game)
+                            .whereRef('data_jag.name', '=', 'cache_jag.name')
+                            .whereRef('data_jag.crc', '=', 'cache_jag.crc')
+                    )
+                )
+                .then(1)
+                .else(0)
+                .end()
+                .as('exists')
+        ])
+        .where('cache_id', '=', cache.id)
+        .execute();
+}
+
+async function getFiles(cache: { id: number, game: string, js5: number, ondemand: number, jag: number }) {
+    if (cache.ondemand) {
+        return getOnDemandFiles(cache);
+    } else if (cache.jag) {
+        return getJagFiles(cache);
+    }
+
+    return [];
+}
+
 export default async function (app: FastifyInstance) {
     // get by db id
     app.get('/:id', async (req: any, reply) => {
@@ -44,7 +80,7 @@ export default async function (app: FastifyInstance) {
             .selectAll()
             .where('id', '=', id)
             .executeTakeFirstOrThrow();
-        const files = await getOnDemandFiles(cache);
+        const files = await getFiles(cache);
 
         const missing = files.filter(f => !f.exists && f.essential);
         const allMissing = files.filter(f => !f.exists);
@@ -70,17 +106,8 @@ export default async function (app: FastifyInstance) {
             .selectAll()
             .where('build', '=', build)
             .executeTakeFirstOrThrow();
-        const files = await getOnDemandFiles(cache);
 
-        const missing = files.filter(f => !f.exists && f.essential);
-        const allMissing = files.filter(f => !f.exists);
-
-        return reply.view('cache/build', {
-            cache,
-            files,
-            missing,
-            allMissing
-        });
+        return reply.redirect(`/caches/${cache.id}`, 301);
     });
 
     // produce a zip of individual cache files for the user
@@ -99,7 +126,7 @@ export default async function (app: FastifyInstance) {
 
         const zip: Record<string, Buffer> = {};
 
-        // todo: js5, jag
+        // todo: js5
         if (cache.ondemand) {
             const cacheData = await db
                 .selectFrom('cache_ondemand')
@@ -119,6 +146,25 @@ export default async function (app: FastifyInstance) {
             for (const data of cacheData) {
                 if (data.bytes) {
                     zip[`${data.archive}/${data.file}.dat`] = data.bytes;
+                }
+            }
+        } else if (cache.jag) {
+            const cacheData = await db
+                .selectFrom('cache_jag')
+                .leftJoin(
+                    'data_jag',
+                    (join) => join
+                        .on('data_jag.game', '=', cache.game)
+                        .onRef('data_jag.name', '=', 'cache_jag.name')
+                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_jag.name', 'data_jag.bytes'])
+                .execute();
+
+            for (const data of cacheData) {
+                if (data.bytes) {
+                    zip[data.name] = data.bytes;
                 }
             }
         }

@@ -1,4 +1,4 @@
-import { importOnDemand } from '#tools/import.js';
+import { importJag, importOnDemand } from '#tools/import.js';
 
 const args = process.argv.slice(2);
 
@@ -8,7 +8,13 @@ if (args.length < 4) {
 }
 
 try {
-    await importOnDemand(args[0], args[1], args[2], args[3], args[4], args[5]);
+    const [source, game, build, era, timestamp, newspost] = args;
+
+    if (era === 'ondemand') {
+        await importOnDemand(source, game, build, timestamp, newspost);
+    } else if (era === 'jag') {
+        await importJag(source, game, build, timestamp, newspost);
+    }
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);
