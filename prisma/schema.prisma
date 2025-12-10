@@ -1,0 +1,98 @@
+generator kysely {
+    provider = "prisma-kysely"
+
+    output       = "../src/db"
+    fileName     = "types.ts"
+    enumFileName = "enums.ts"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model cache {
+    id    Int    @id @default(autoincrement())
+    build String
+
+    // legacy Boolean
+    // js5 Boolean
+}
+
+model cache_file {
+    cache_id Int
+    archive  Int
+    file     Int
+
+    version Int
+    crc     Int
+
+    essential Boolean
+
+    @@id([cache_id, archive, file])
+    @@index([cache_id])
+}
+
+model data {
+    id Int @id @default(autoincrement())
+
+    archive Int
+    file    Int
+
+    version Int
+    data    Bytes @db.MediumBlob
+    crc     Int
+    len     Int
+
+    // @@index([archive, file])
+    // @@index([archive, crc])
+    @@index([archive, file, crc])
+}
+
+// model cache_file_legacy {
+//     cache_id Int
+
+//     name String
+//     crc  Int
+
+//     @@id([cache_id, name, crc])
+// }
+
+// model data_legacy {
+//     id Int @id @default(autoincrement())
+
+//     name String
+
+//     data Bytes @db.MediumBlob
+//     len  Int
+//     crc  Int
+
+//     @@index([name])
+//     @@index([crc])
+// }
+
+// model cache_file_js5 {
+//     cache_id Int
+//     archive Int
+//     group Int
+
+//     version Int
+//     crc  Int
+
+//     @@id([cache_id, archive, group])
+// }
+
+// model data_js5 {
+//     id Int @id @default(autoincrement())
+
+//     archive Int
+//     group Int
+
+//     version Int
+//     data Bytes @db.MediumBlob
+//     crc  Int
+//     len  Int
+
+//     @@index([archive, group])
+//     @@index([archive, crc])
+// }
