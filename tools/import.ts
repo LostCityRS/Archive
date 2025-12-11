@@ -72,6 +72,7 @@ async function saveJs5(cacheId: number, gameId: number, archive: number, group: 
 
     await db
         .insertInto('cache_js5')
+        .ignore()
         .values({
             cache_id: cacheId,
             archive,
@@ -83,10 +84,49 @@ async function saveJs5(cacheId: number, gameId: number, archive: number, group: 
 }
 
 export async function importJs5(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
-    const cache = await createCache(gameName, build, 'js5', timestamp, newspost);
-
     const archives = fs.readFileSync(`${source}/main_file_cache.idx255`).length / 6;
     const stream = new Js5LocalDiskCache(source, archives);
+
+    // check if exact cache was added already
+    const archiveCrcs = new Int32Array(archives);
+    for (let i = 0; i < archives; i++) {
+        const buf = stream.read(255, i);
+        if (buf) {
+            archiveCrcs[i] = Packet.getcrc(buf, 0, buf.length);
+        }
+    }
+
+    const all = await db
+        .selectFrom('cache')
+        .selectAll()
+        .where('js5', '=', 1)
+        .execute();
+
+    let cache;
+    for (const test of all) {
+        const jags = await db
+            .selectFrom('cache_js5')
+            .selectAll()
+            .where('cache_id', '=', test.id)
+            .where('archive', '=', 255)
+            .execute();
+
+        let matches = true;
+        for (const jag of jags) {
+            if (archiveCrcs[jag.group] !== jag.crc) {
+                matches = false;
+                break;
+            }
+        }
+        if (matches) {
+            cache = test;
+            break;
+        }
+    }
+
+    if (typeof cache === 'undefined') {
+        cache = await createCache(gameName, build, 'js5', timestamp, newspost);
+    }
 
     for (let archive = 0; archive < archives; archive++) {
         const index = stream.read(255, archive);
