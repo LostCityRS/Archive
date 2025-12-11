@@ -25,7 +25,7 @@ export default class Packet {
         return ~crc;
     }
 
-    static checkcrc(src: Uint8Array, off: number, len: number, expected: number = 0): boolean {
+    static checkcrc(src: Uint8Array, off: number, len: number, expected: number): boolean {
         return Packet.getcrc(src, off, len) == expected;
     }
 

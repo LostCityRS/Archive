@@ -87,28 +87,6 @@ export async function importJs5(source: string, gameName: string, build: string,
             const version = js5.groupVersion[group];
             const crc = js5.groupChecksum[group];
 
-            if (stream.has(archive, group)) {
-                const buf = stream.read(archive, group)!;
-                const checksum = Packet.getcrc(buf, 0, buf.length - 2);
-                // todo: configure trailer length (may be 4 bytes now)
-
-                if (checksum === crc) {
-                    await db
-                        .insertInto('data_js5')
-                        .ignore()
-                        .values({
-                            game_id: game.id,
-                            archive,
-                            group,
-                            version,
-                            crc,
-                            bytes: Buffer.from(buf),
-                            len: buf.length
-                        })
-                        .execute();
-                }
-            }
-
             await db
                 .insertInto('cache_js5')
                 .values({
@@ -119,6 +97,34 @@ export async function importJs5(source: string, gameName: string, build: string,
                     crc
                 })
                 .execute();
+
+            if (stream.has(archive, group)) {
+                let buf = stream.read(archive, group)!;
+
+                if (Packet.checkcrc(buf, 0, buf.length - 4, crc)) {
+                    // 4 byte trailer
+                    buf = buf.subarray(0, buf.length - 4);
+                } else if (Packet.checkcrc(buf, 0, buf.length - 2, crc)) {
+                    // 2 byte trailer
+                    buf = buf.subarray(0, buf.length - 2);
+                } else if (!Packet.checkcrc(buf, 0, buf.length, crc)) {
+                    continue;
+                }
+
+                await db
+                    .insertInto('data_js5')
+                    .ignore()
+                    .values({
+                        game_id: game.id,
+                        archive,
+                        group,
+                        version,
+                        crc,
+                        bytes: Buffer.from(buf),
+                        len: buf.length
+                    })
+                    .execute();
+            }
         }
     }
 }
@@ -261,24 +267,28 @@ export async function importOnDemand(source: string, gameName: string, build: st
                 .execute();
 
             if (stream.has(archive + 1, file)) {
-                const buf = stream.read(archive + 1, file)!;
-                const checksum = Packet.getcrc(buf, 0, buf.length - 2);
+                let buf = stream.read(archive + 1, file)!;
 
-                if (checksum === crc) {
-                    await db
-                        .insertInto('data_ondemand')
-                        .ignore()
-                        .values({
-                            game_id: game.id,
-                            archive: archive + 1,
-                            file,
-                            version,
-                            crc,
-                            bytes: Buffer.from(buf),
-                            len: buf.length
-                        })
-                        .execute();
+                if (Packet.checkcrc(buf, 0, buf.length - 2, crc)) {
+                    // 2 byte trailer
+                    buf = buf.subarray(0, buf.length - 2);
+                } else if (!Packet.checkcrc(buf, 0, buf.length, crc)) {
+                    continue;
                 }
+
+                await db
+                    .insertInto('data_ondemand')
+                    .ignore()
+                    .values({
+                        game_id: game.id,
+                        archive: archive + 1,
+                        file,
+                        version,
+                        crc,
+                        bytes: Buffer.from(buf),
+                        len: buf.length
+                    })
+                    .execute();
             }
         }
     }
