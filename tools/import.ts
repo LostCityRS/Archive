@@ -230,7 +230,7 @@ export async function importOnDemand(source: string, gameName: string, build: st
             }
 
             const essential = archive === 0 ? models[file] > 0 : true;
-            await saveOnDemand(cache.id, cache.game_id, archive + 1, file, version, crc, essential, stream.read(archive + 1, file));
+            await saveOnDemand(cache.id, cache.game_id, archive + 1, file, version - 1, crc, essential, stream.read(archive + 1, file));
         }
     }
 }
