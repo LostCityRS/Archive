@@ -243,6 +243,18 @@ export default async function (app: FastifyInstance) {
         // todo: main_file_cache.dat
         // todo: main_file_cache.dat2 (expose control over packing music to fit large caches?)
         // todo: offer jcache too?
+
+        const { id } = req.params;
+
+        if (id.length === 0) {
+            throw new Error('Missing route parameters');
+        }
+
+        const cache = await getCache(id);
+
+        reply.status(200);
+        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
+        reply.send();
     });
 
     // produce individual cache files for the user (cache_js5)

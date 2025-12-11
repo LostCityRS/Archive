@@ -40,7 +40,7 @@
                                 <%= cache.build %>
                             </th>
                             <td class="px-6 py-4">
-                                <%= cache.timestamp ?? '-' %>
+                                <%= cache.timestamp ? cache.timestamp.toISOString().split('T')[0] : '-' %>
                             </td>
                             <td class="px-6 py-4 w-1/8">
                                 <a href="/caches/<%= cache.id %>">More Info</a>

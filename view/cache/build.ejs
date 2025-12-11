@@ -15,35 +15,8 @@
     <%= cache.build %><br>
     <%= files.length %> files<br>
 
-    <% if (cache.js5) { %>
-        missing <%= missing.length %> files:<br>
-
-        <% for (const file of missing) { %>
-            Archive: <%= file.archive %><br>
-            Group: <%= file.group %><br>
-            Version: <%= file.version %><br>
-            CRC: <%= file.crc %><br>
-            <br>
-        <% } %>
-    <% } else if (cache.ondemand) { %>
-        missing <%= missing.length %> essential files:<br>
-
-        <% for (const file of missing) { %>
-            Archive: <%= file.archive %><br>
-            File: <%= file.file %><br>
-            Version: <%= file.version %><br>
-            CRC: <%= file.crc %><br>
-            <br>
-        <% } %>
-    <% } else if (cache.jag) { %>
-        missing <%= missing.length %> files:<br>
-
-        <% for (const file of missing) { %>
-            Name: <%= file.name %><br>
-            CRC: <%= file.crc %><br>
-            <br>
-        <% } %>
-    <% } %>
+    <a href="/caches/<%= cache.id %>/cache.zip">Download as client format</a><br>
+    <a href="/caches/<%= cache.id %>/files.zip">Download as directory hierarchy</a>
 </body>
 
 </html>
