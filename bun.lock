@@ -20,6 +20,7 @@
         "@tailwindcss/cli": "^4.1.17",
         "@types/ejs": "^3.1.5",
         "bun-types": "^1.3.4",
+        "daisyui": "^5.5.13",
         "prisma": "6.12.0",
         "prisma-kysely": "^2.2.1",
         "tailwindcss": "^4.1.17",
@@ -239,6 +240,8 @@
     "cookie-signature": ["cookie-signature@1.0.7", "", {}, "sha512-NXdYc3dLr47pBkpUCHtKSwIOQXLVn8dZEuywboCOJY/osA0wFSLlSawr3KN8qXJEyX66FcONTH8EIlVuK0yyFA=="],
 
     "cross-spawn": ["cross-spawn@7.0.6", "", { "dependencies": { "path-key": "^3.1.0", "shebang-command": "^2.0.0", "which": "^2.0.1" } }, "sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA=="],
+
+    "daisyui": ["daisyui@5.5.13", "", {}, "sha512-Y1tHPzxU3a/MsArjQ5Bw4DaOnC1IsT9O+M9Wz2NwCw08vuCGhM+xx3ScWfL6IS4YiJXZHh73qNK9GhBWMRKY6Q=="],
 
     "debug": ["debug@2.6.9", "", { "dependencies": { "ms": "2.0.0" } }, "sha512-bC7ElrdJaJnPbAP+1EotYvqZsb3ecl5wi6Bfi6BJTUcNowp6cvspg0jXznRTKDjm/E7AdgFBVeAPVMNcKGsHMA=="],
 
