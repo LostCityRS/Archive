@@ -1,0 +1,36 @@
+@import "tailwindcss";
+@plugin "daisyui";
+@plugin "daisyui/theme" {
+  name: "pizzacake";
+  default: false;
+  prefersdark: false;
+  color-scheme: "dark";
+  --color-base-100: #131512;
+  --color-base-200: #1b1d19;
+  --color-base-300: #232621;
+  --color-base-content: oklch(96% 0.003 264.542);
+  --color-primary: #2d322a;
+  --color-primary-content: #e6e3d5;
+  --color-secondary: #3c4a3b;
+  --color-secondary-content: #e6e3d5;
+  --color-accent: #c9a86a;
+  --color-accent-content: #1b1b1b;
+  --color-neutral: #1a1c1a;
+  --color-neutral-content: #e2dfd3;
+  --color-info: #5f84a2;
+  --color-info-content: oklch(28% 0.091 267.935);
+  --color-success: #6a8f6e;
+  --color-success-content: oklch(26% 0.051 172.552);
+  --color-warning: #c0a357;
+  --color-warning-content: oklch(28% 0.066 53.813);
+  --color-error: #a15a4a;
+  --color-error-content: oklch(28% 0.109 3.907);
+  --radius-selector: 0.25rem;
+  --radius-field: 0.5rem;
+  --radius-box: 1rem;
+  --size-selector: 0.25rem;
+  --size-field: 0.25rem;
+  --border: 1px;
+  --depth: 1;
+  --noise: 0;
+}
