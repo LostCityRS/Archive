@@ -1,12 +1,10 @@
-import fs from 'fs';
-
 import { FastifyInstance } from 'fastify';
 import { Zip, ZipDeflate } from 'fflate';
 import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
-import FileStreamWrite from '#/io/FileStreamWrite.js';
-import Js5LocalDiskCacheWrite from '#/js5/Js5LocalDiskCacheWrite.js';
+import FileStreamAsync from '#/io/FileStreamAsync.js';
+import Js5LocalDiskCacheAsync from '#/js5/Js5LocalDiskCacheAsync.js';
 
 async function getCache(id: number) {
     return db
@@ -249,7 +247,6 @@ export default async function (app: FastifyInstance) {
                 'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
             });
 
-            let tempDir: string | null = null;
             const zip = new Zip((err, chunk, final) => {
                 if (err) {
                     reply.raw.end();
@@ -260,15 +257,18 @@ export default async function (app: FastifyInstance) {
 
                 if (final) {
                     reply.raw.end();
-
-                    if (tempDir !== null) {
-                        fs.rmSync(tempDir, { recursive: true, force: true });
-                    }
                 }
             });
 
             if (cache.js5) {
-                const cacheData = await db
+                const { archives } = await db
+                    .selectFrom('cache_js5')
+                    .select(db.fn.max('archive').as('archives'))
+                    .where('cache_id', '=', cache.id)
+                    .where('archive', '<', 255)
+                    .executeTakeFirstOrThrow();
+
+                const cacheData = db
                     .selectFrom('cache_js5')
                     .leftJoin(
                         'data_js5',
@@ -281,38 +281,39 @@ export default async function (app: FastifyInstance) {
                     )
                     .where('cache_id', '=', cache.id)
                     .select(['cache_js5.archive', 'cache_js5.group', 'cache_js5.version', 'data_js5.bytes'])
-                    .execute();
+                    .stream();
 
-                const { archives } = await db
-                    .selectFrom('cache_js5')
-                    .select(db.fn.max('archive').as('archives'))
-                    .where('cache_id', '=', cache.id)
-                    .where('archive', '<', 255)
-                    .executeTakeFirstOrThrow();
+                const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
+                zip.add(dat);
 
-                tempDir = `data/work/${Date.now()}`;
-                const stream = new Js5LocalDiskCacheWrite(tempDir, archives + 1);
+                const stream = new Js5LocalDiskCacheAsync(archives + 1);
+                stream.dat.on('data', chunk => {
+                    dat.push(Buffer.from(chunk));
+                });
+                stream.dat.on('end', () => {
+                    dat.push(new Uint8Array(0), true);
+                });
 
-                for (const data of cacheData) {
+                for await (const data of cacheData) {
                     if (data.bytes) {
                         stream.write(data.archive, data.group, data.bytes, data.version);
                     }
                 }
+                stream.dat.end();
 
-                const files = fs.readdirSync(tempDir);
-                for (const name of files) {
-                    const entry = new ZipDeflate(name, { level: 1 });
-                    zip.add(entry);
+                for (let i = 0; i < archives; i++) {
+                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                }
 
-                    fs.createReadStream(`${tempDir}/${name}`)
-                        .on('data', chunk => entry.push(Buffer.from(chunk)))
-                        .on('end', () => entry.push(new Uint8Array(0), true))
-                        .on('error', err => {
-                            throw err;
-                        });
+                {
+                    const idx = new ZipDeflate('main_file_cache.idx255', { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
                 }
             } else if (cache.ondemand) {
-                const cacheData = await db
+                const cacheData = db
                     .selectFrom('cache_ondemand')
                     .leftJoin(
                         'data_ondemand',
@@ -327,28 +328,30 @@ export default async function (app: FastifyInstance) {
                     .select(['cache_ondemand.archive', 'cache_ondemand.file', 'cache_ondemand.version', 'data_ondemand.bytes'])
                     .orderBy('archive', 'asc')
                     .orderBy('file', 'asc')
-                    .execute();
+                    .stream();
 
-                tempDir = `data/work/${Date.now()}`;
-                const stream = new FileStreamWrite(tempDir);
+                const dat = new ZipDeflate('main_file_cache.dat', { level: 1 });
+                zip.add(dat);
 
-                for (const data of cacheData) {
+                const stream = new FileStreamAsync();
+                stream.dat.on('data', chunk => {
+                    dat.push(Buffer.from(chunk));
+                });
+                stream.dat.on('end', () => {
+                    dat.push(new Uint8Array(0), true);
+                });
+
+                for await (const data of cacheData) {
                     if (data.bytes) {
                         stream.write(data.archive, data.file, data.bytes, data.version);
                     }
                 }
+                stream.dat.end();
 
-                const files = fs.readdirSync(tempDir);
-                for (const name of files) {
-                    const entry = new ZipDeflate(name, { level: 1 });
-                    zip.add(entry);
-
-                    fs.createReadStream(`${tempDir}/${name}`)
-                        .on('data', chunk => entry.push(Buffer.from(chunk)))
-                        .on('end', () => entry.push(new Uint8Array(0), true))
-                        .on('error', err => {
-                            throw err;
-                        });
+                for (let i = 0; i < 5; i++) {
+                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
                 }
             } else if (cache.jag) {
                 const cacheData = db
@@ -365,7 +368,7 @@ export default async function (app: FastifyInstance) {
                     .stream();
 
                 for await (const data of cacheData) {
-                    if (data.bytes && data.bytes.length) {
+                    if (data.bytes) {
                         const entry = new ZipDeflate(data.name, { level: 0 });
                         zip.add(entry);
                         entry.push(data.bytes, true);
