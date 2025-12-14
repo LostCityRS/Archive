@@ -33,5 +33,5 @@ await fastify.register(Autoload, {
     forceESM: true
 });
 
-fastify.listen({ port: 3000, host: '0.0.0.0' });
-console.log('Running on http://localhost:3000');
+fastify.listen({ port: process.env.WEB_PORT ? parseInt(process.env.WEB_PORT) : 3000, host: '0.0.0.0' });
+console.log(`Running on http://localhost:${process.env.WEB_PORT ?? 3000}`);
