@@ -1,8 +1,12 @@
+import fs from 'fs';
+
 import { FastifyInstance } from 'fastify';
 import { zipSync } from 'fflate';
 import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
+import FileStreamWrite from '#/io/FileStreamWrite.js';
+import Js5LocalDiskCacheWrite from '#/js5/Js5LocalDiskCacheWrite.js';
 
 async function getCache(id: number) {
     return db
@@ -20,7 +24,19 @@ async function getCache(id: number) {
         .executeTakeFirstOrThrow();
 }
 
-async function getJs5Files(cache: { id: number, game_id: number }) {
+async function listCacheFiles(cache: { id: number, game_id: number, js5: number, ondemand: number, jag: number }) {
+    if (cache.js5) {
+        return listCacheJs5Files(cache);
+    } else if (cache.ondemand) {
+        return listCacheOnDemandFiles(cache);
+    } else if (cache.jag) {
+        return listCacheJagFiles(cache);
+    }
+
+    return [];
+}
+
+async function listCacheJs5Files(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_js5')
         .select(['archive', 'group', 'version', 'crc'])
@@ -47,7 +63,7 @@ async function getJs5Files(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getOnDemandFiles(cache: { id: number, game_id: number }) {
+async function listCacheOnDemandFiles(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_ondemand')
         .select(['archive', 'file', 'version', 'crc', 'essential'])
@@ -73,7 +89,7 @@ async function getOnDemandFiles(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getJagFiles(cache: { id: number, game_id: number }) {
+async function listCacheJagFiles(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_jag')
         .select(['name', 'crc'])
@@ -99,18 +115,6 @@ async function getJagFiles(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getFiles(cache: { id: number, game_id: number, js5: number, ondemand: number, jag: number }) {
-    if (cache.js5) {
-        return getJs5Files(cache);
-    } else if (cache.ondemand) {
-        return getOnDemandFiles(cache);
-    } else if (cache.jag) {
-        return getJagFiles(cache);
-    }
-
-    return [];
-}
-
 export default async function (app: FastifyInstance) {
     // get by db id
     // app.get('/:id', async (req: any, reply) => {
@@ -122,6 +126,8 @@ export default async function (app: FastifyInstance) {
 
     // produce a zip of individual cache files for the user
     app.get('/:id/files.zip', async (req: any, reply) => {
+        // todo: is it possible to stream instead of working in memory?
+
         const { id } = req.params;
 
         if (id.length === 0) {
@@ -202,8 +208,8 @@ export default async function (app: FastifyInstance) {
 
     // produce a cache in the client format and zip it for the user
     app.get('/:id/cache.zip', async (req: any, reply) => {
-        // todo: main_file_cache.dat
-        // todo: main_file_cache.dat2 (expose control over packing music to fit large caches?)
+        // todo: is it possible to stream instead of working locally?
+        // todo: expose control over packing music to fit large rs3 caches?
         // todo: offer jcache too?
 
         const { id } = req.params;
@@ -214,9 +220,103 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
+        const zip: Record<string, Buffer> = {};
+
+        if (cache.js5) {
+            const cacheData = await db
+                .selectFrom('cache_js5')
+                .leftJoin(
+                    'data_js5',
+                    (join) => join
+                        .on('data_js5.game_id', '=', cache.game_id)
+                        .onRef('data_js5.archive', '=', 'cache_js5.archive')
+                        .onRef('data_js5.group', '=', 'cache_js5.group')
+                        .onRef('data_js5.version', '=', 'cache_js5.version')
+                        .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_js5.archive', 'cache_js5.group', 'cache_js5.version', 'data_js5.bytes'])
+                .execute();
+
+            const { archives } = await db
+                .selectFrom('cache_js5')
+                .select(db.fn.max('archive').as('archives'))
+                .where('cache_id', '=', cache.id)
+                .where('archive', '<', 255)
+                .executeTakeFirstOrThrow();
+
+            const tempDir = `data/work/${Date.now()}`;
+            const stream = new Js5LocalDiskCacheWrite(tempDir, archives + 1);
+
+            for (const data of cacheData) {
+                if (data.bytes) {
+                    stream.write(data.archive, data.group, data.bytes, data.version);
+                }
+            }
+
+            const files = fs.readdirSync(tempDir);
+            for (const file of files) {
+                zip[file] = fs.readFileSync(`${tempDir}/${file}`);
+            }
+
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        } else if (cache.ondemand) {
+            const cacheData = await db
+                .selectFrom('cache_ondemand')
+                .leftJoin(
+                    'data_ondemand',
+                    (join) => join
+                        .on('data_ondemand.game_id', '=', cache.game_id)
+                        .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                        .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                        .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
+                        .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_ondemand.archive', 'cache_ondemand.file', 'cache_ondemand.version', 'data_ondemand.bytes'])
+                .orderBy('archive', 'asc')
+                .orderBy('file', 'asc')
+                .execute();
+
+            const tempDir = `data/work/${Date.now()}`;
+            const stream = new FileStreamWrite(tempDir);
+
+            for (const data of cacheData) {
+                if (data.bytes) {
+                    stream.write(data.archive, data.file, data.bytes, data.version);
+                }
+            }
+
+            const files = fs.readdirSync(tempDir);
+            for (const file of files) {
+                zip[file] = fs.readFileSync(`${tempDir}/${file}`);
+            }
+
+            fs.rmSync(tempDir, { recursive: true, force: true });
+        } else if (cache.jag) {
+            const cacheData = await db
+                .selectFrom('cache_jag')
+                .leftJoin(
+                    'data_jag',
+                    (join) => join
+                        .on('data_jag.game_id', '=', cache.game_id)
+                        .onRef('data_jag.name', '=', 'cache_jag.name')
+                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_jag.name', 'data_jag.bytes'])
+                .execute();
+
+            for (const data of cacheData) {
+                if (data.bytes) {
+                    zip[data.name] = data.bytes;
+                }
+            }
+        }
+
         reply.status(200);
         reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
-        reply.send();
+        reply.send(zipSync(zip, { level: 1 }));
     });
 
     // produce individual cache files for the user (cache_js5)
