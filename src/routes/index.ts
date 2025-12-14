@@ -15,8 +15,37 @@ export default async function (app: FastifyInstance) {
             .groupBy('game.id')
             .execute();
 
+        const { len_js5 } = await db
+            .selectFrom('data_js5')
+            .select(db.fn.sum('len').as('len_js5'))
+            .executeTakeFirstOrThrow();
+
+        const { len_od } = await db
+            .selectFrom('data_ondemand')
+            .select(db.fn.sum('len').as('len_od'))
+            .executeTakeFirstOrThrow();
+
+        const { len_jag } = await db
+            .selectFrom('data_jag')
+            .select(db.fn.sum('len').as('len_jag'))
+            .executeTakeFirstOrThrow();
+
+        let len = 0;
+        if (len_js5 !== null) {
+            len += parseInt(len_js5 as string);
+        }
+        if (len_od !== null) {
+            len += parseInt(len_od as string);
+        }
+        if (len_jag !== null) {
+            len += parseInt(len_jag as string);
+        }
+
         return reply.view('index', {
-            games
+            games,
+            stats: {
+                len
+            }
         });
     });
 
