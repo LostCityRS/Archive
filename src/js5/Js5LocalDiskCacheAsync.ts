@@ -56,11 +56,6 @@ export default class Js5LocalDiskCacheAsync {
             buf.gdata(chunk.data, 8, available);
 
             this.dat.write(chunk.data);
-            if (available > 512) {
-                this.dat.write(buf.data);
-            } else {
-                this.dat.write(buf.data.subarray(0, available));
-            }
         }
     }
 }
