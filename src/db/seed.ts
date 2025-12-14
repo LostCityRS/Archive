@@ -5,13 +5,16 @@ try {
         .insertInto('game')
         .values([{
             name: 'runescape',
-            display_name: 'RuneScape'
+            display_name: 'RuneScape',
+            newspost_url: 'https://runescape.wiki/w/Update:'
         }, {
             name: 'rsclassic',
-            display_name: 'RuneScape Classic'
+            display_name: 'RuneScape Classic',
+            newspost_url: 'https://classic.runescape.wiki/w/Update:'
         }, {
             name: 'oldscape',
-            display_name: 'Old School RuneScape'
+            display_name: 'Old School RuneScape',
+            newspost_url: 'https://oldschool.runescape.wiki/w/Update:'
         }, {
             name: 'darkscape',
             display_name: 'DarkScape',

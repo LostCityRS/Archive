@@ -15,7 +15,7 @@
     <div class="flex justify-center mt-1">
         <div class="flex-col text-center">
             <h1 class="text-xl"><%= game.display_name %> Caches</h1>
-            <a href="/">Go Back</a>
+            <a class="hover:text-gray-300" href="/">Go Back</a>
         </div>
     </div>
 
@@ -50,10 +50,14 @@
                                 <%= cache.timestamp ? cache.timestamp.toISOString().split('T')[0] : '-' %>
                             </td>
                             <td class="px-6 py-4">
+                                <% if (game.newspost_url !== null && cache.newspot !== null) { %>
+                                <a class="hover:text-gray-300" href="<%= game.newspost_url%>" rel="noreferrer"><%= cache.newspost %></a>
+                                <% } else { %>
                                 <%= cache.newspost ?? '-' %>
+                                <% } %>
                             </td>
                             <td class="px-6 py-4 w-1/8">
-                                <a href="/caches/<%= cache.id %>/cache.zip">Download</a>
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>/cache.zip">Download</a>
                             </td>
                         </tr>
                     <% } %>
