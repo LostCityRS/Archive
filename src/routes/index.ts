@@ -62,8 +62,8 @@ export default async function (app: FastifyInstance) {
             .selectFrom('cache')
             .selectAll()
             .where('game_id', '=', game.id)
-            .orderBy('build', 'asc')
             .orderBy('timestamp', 'asc')
+            .orderBy('build', 'asc')
             .execute();
 
         return reply.view('list', {
