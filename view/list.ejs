@@ -50,8 +50,8 @@
                                 <%= cache.timestamp ? cache.timestamp.toISOString().split('T')[0] : '-' %>
                             </td>
                             <td class="px-6 py-4">
-                                <% if (game.newspost_url !== null && cache.newspot !== null) { %>
-                                <a class="hover:text-gray-300" href="<%= game.newspost_url%>" rel="noreferrer"><%= cache.newspost %></a>
+                                <% if (game.newspost_url !== null && cache.newspost !== null) { %>
+                                <a class="hover:text-gray-300" href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>" rel="noreferrer"><%= cache.newspost %></a>
                                 <% } else { %>
                                 <%= cache.newspost ?? '-' %>
                                 <% } %>
