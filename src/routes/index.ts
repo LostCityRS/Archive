@@ -63,6 +63,7 @@ export default async function (app: FastifyInstance) {
             .selectAll()
             .where('game_id', '=', game.id)
             .orderBy('build', 'asc')
+            .orderBy('timestamp', 'asc')
             .execute();
 
         return reply.view('list', {
