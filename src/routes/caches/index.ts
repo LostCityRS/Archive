@@ -113,50 +113,12 @@ async function getFiles(cache: { id: number, game_id: number, js5: number, ondem
 
 export default async function (app: FastifyInstance) {
     // get by db id
-    app.get('/:id', async (req: any, reply) => {
-        const { id } = req.params;
-
-        if (id.length === 0) {
-            throw new Error('Missing route parameters');
-        }
-
-        const cache = await getCache(id);
-        const files = await getFiles(cache);
-
-        const missing = files.filter(f => !f.exists && f.essential);
-        const allMissing = files.filter(f => !f.exists);
-
-        return reply.view('cache/build', {
-            cache,
-            files,
-            missing,
-            allMissing
-        });
-    });
+    // app.get('/:id', async (req: any, reply) => {
+    // });
 
     // get by revision (easy shorthand, if possible)
-    app.get('/:game/:build', async (req: any, reply) => {
-        const { game: gameName, build } = req.params;
-
-        if (gameName.length === 0 || build.length === 0) {
-            throw new Error('Missing route parameters');
-        }
-
-        const game = await db
-            .selectFrom('game')
-            .selectAll()
-            .where('name', '=', gameName)
-            .executeTakeFirstOrThrow();
-
-        const cache = await db
-            .selectFrom('cache')
-            .selectAll()
-            .where('game_id', '=', game.id)
-            .where('build', '=', build)
-            .executeTakeFirstOrThrow();
-
-        return reply.redirect(`/caches/${cache.id}`, 301);
-    });
+    // app.get('/:game/:build', async (req: any, reply) => {
+    // });
 
     // produce a zip of individual cache files for the user
     app.get('/:id/files.zip', async (req: any, reply) => {

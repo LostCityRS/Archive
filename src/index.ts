@@ -25,7 +25,7 @@ fastify.register(View, {
 });
 
 fastify.setNotFoundHandler((req, reply) => {
-    reply.status(404).send();
+    reply.redirect('/', 302);
 });
 
 await fastify.register(Autoload, {
@@ -34,3 +34,4 @@ await fastify.register(Autoload, {
 });
 
 fastify.listen({ port: 3000, host: '0.0.0.0' });
+console.log('Running on http://localhost:3000');
