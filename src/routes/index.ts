@@ -62,9 +62,8 @@ export default async function (app: FastifyInstance) {
             .selectFrom('cache')
             .selectAll()
             .where('game_id', '=', game.id)
-            .orderBy('timestamp', 'asc')
-            .orderBy('build', 'asc')
             .execute();
+        caches.sort((a, b) => parseInt(a.build) - parseInt(b.build));
 
         const { len_js5 } = await db
             .selectFrom('data_js5')
