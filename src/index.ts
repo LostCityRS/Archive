@@ -28,6 +28,12 @@ fastify.setNotFoundHandler((req, reply) => {
     reply.redirect('/', 302);
 });
 
+fastify.setErrorHandler((err, req, reply) => {
+    reply.redirect('/', 302);
+
+    console.error(err);
+});
+
 await fastify.register(Autoload, {
     dir: 'src/routes',
     forceESM: true

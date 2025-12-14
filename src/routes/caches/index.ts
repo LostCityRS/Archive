@@ -1,7 +1,7 @@
 import fs from 'fs';
 
 import { FastifyInstance } from 'fastify';
-import { zipSync } from 'fflate';
+import { Zip, ZipDeflate } from 'fflate';
 import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
@@ -136,10 +136,26 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        const zip: Record<string, Buffer> = {};
+        reply.raw.writeHead(200, {
+            'Content-Type': 'application/zip',
+            'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+        })
+
+        const zip = new Zip((err, chunk, final) => {
+            if (err) {
+                reply.raw.end();
+                return;
+            }
+
+            reply.raw.write(Buffer.from(chunk));
+
+            if (final) {
+                reply.raw.end();
+            }
+        });
 
         if (cache.js5) {
-            const cacheData = await db
+            const cacheData = db
                 .selectFrom('cache_js5')
                 .leftJoin(
                     'data_js5',
@@ -152,15 +168,17 @@ export default async function (app: FastifyInstance) {
                 )
                 .where('cache_id', '=', cache.id)
                 .select(['cache_js5.archive', 'cache_js5.group', 'data_js5.bytes'])
-                .execute();
+                .stream();
 
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[`${data.archive}/${data.group}.dat`] = data.bytes;
+            for await (const data of cacheData) {
+                if (data.bytes && data.bytes.length) {
+                    const entry = new ZipDeflate(`${data.archive}/${data.group}.dat`, { level: 0 });
+                    zip.add(entry);
+                    entry.push(data.bytes, true);
                 }
             }
         } else if (cache.ondemand) {
-            const cacheData = await db
+            const cacheData = db
                 .selectFrom('cache_ondemand')
                 .leftJoin(
                     'data_ondemand',
@@ -173,15 +191,17 @@ export default async function (app: FastifyInstance) {
                 )
                 .where('cache_id', '=', cache.id)
                 .select(['cache_ondemand.archive', 'cache_ondemand.file', 'data_ondemand.bytes'])
-                .execute();
+                .stream();
 
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[`${data.archive}/${data.file}.dat`] = data.bytes;
+            for await (const data of cacheData) {
+                if (data.bytes && data.bytes.length) {
+                    const entry = new ZipDeflate(`${data.archive}/${data.file}.dat`, { level: 0 });
+                    zip.add(entry);
+                    entry.push(data.bytes, true);
                 }
             }
         } else if (cache.jag) {
-            const cacheData = await db
+            const cacheData = db
                 .selectFrom('cache_jag')
                 .leftJoin(
                     'data_jag',
@@ -192,18 +212,18 @@ export default async function (app: FastifyInstance) {
                 )
                 .where('cache_id', '=', cache.id)
                 .select(['cache_jag.name', 'data_jag.bytes'])
-                .execute();
+                .stream();
 
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[data.name] = data.bytes;
+            for await (const data of cacheData) {
+                if (data.bytes && data.bytes.length) {
+                    const entry = new ZipDeflate(data.name, { level: 0 });
+                    zip.add(entry);
+                    entry.push(data.bytes, true);
                 }
             }
         }
 
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-files-lostcity#${cache.id}.zip"`);
-        reply.send(zipSync(zip, { level: 0 }));
+        zip.end();
     });
 
     // produce a cache in the client format and zip it for the user
@@ -220,7 +240,23 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        const zip: Record<string, Buffer> = {};
+        reply.raw.writeHead(200, {
+            'Content-Type': 'application/zip',
+            'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+        })
+
+        const zip = new Zip((err, chunk, final) => {
+            if (err) {
+                reply.raw.end();
+                return;
+            }
+
+            reply.raw.write(Buffer.from(chunk));
+
+            if (final) {
+                reply.raw.end();
+            }
+        });
 
         if (cache.js5) {
             const cacheData = await db
@@ -255,8 +291,10 @@ export default async function (app: FastifyInstance) {
             }
 
             const files = fs.readdirSync(tempDir);
-            for (const file of files) {
-                zip[file] = fs.readFileSync(`${tempDir}/${file}`);
+            for (const name of files) {
+                const entry = new ZipDeflate(name, { level: 1 });
+                zip.add(entry);
+                entry.push(fs.readFileSync(`${tempDir}/${name}`), true);
             }
 
             fs.rmSync(tempDir, { recursive: true, force: true });
@@ -288,13 +326,15 @@ export default async function (app: FastifyInstance) {
             }
 
             const files = fs.readdirSync(tempDir);
-            for (const file of files) {
-                zip[file] = fs.readFileSync(`${tempDir}/${file}`);
+            for (const name of files) {
+                const entry = new ZipDeflate(name, { level: 1 });
+                zip.add(entry);
+                entry.push(fs.readFileSync(`${tempDir}/${name}`), true);
             }
 
             fs.rmSync(tempDir, { recursive: true, force: true });
         } else if (cache.jag) {
-            const cacheData = await db
+            const cacheData = db
                 .selectFrom('cache_jag')
                 .leftJoin(
                     'data_jag',
@@ -305,18 +345,18 @@ export default async function (app: FastifyInstance) {
                 )
                 .where('cache_id', '=', cache.id)
                 .select(['cache_jag.name', 'data_jag.bytes'])
-                .execute();
+                .stream();
 
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[data.name] = data.bytes;
+            for await (const data of cacheData) {
+                if (data.bytes && data.bytes.length) {
+                    const entry = new ZipDeflate(data.name, { level: 0 });
+                    zip.add(entry);
+                    entry.push(data.bytes, true);
                 }
             }
         }
 
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
-        reply.send(zipSync(zip, { level: 1 }));
+        zip.end();
     });
 
     // produce individual cache files for the user (cache_js5)
