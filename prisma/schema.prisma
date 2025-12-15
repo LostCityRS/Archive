@@ -139,3 +139,21 @@ model cache_jag {
     @@id([cache_id, name, crc])
     @@index([cache_id])
 }
+
+model client {
+    id Int @id @default(autoincrement())
+
+    game_id  Int
+    cache_id Int?
+
+    build     String
+    timestamp DateTime?
+    newspost  String?
+
+    name  String
+    bytes Bytes  @db.LongBlob
+    len   Int
+
+    @@index([game_id])
+    @@index([cache_id])
+}

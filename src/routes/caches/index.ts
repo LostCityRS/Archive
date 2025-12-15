@@ -24,8 +24,27 @@ async function getCache(id: number) {
 
 export default async function (app: FastifyInstance) {
     // get by db id
-    // app.get('/:id', async (req: any, reply) => {
-    // });
+    app.get('/:id', async (req: any, reply) => {
+        const start = Date.now();
+
+        const { id } = req.params;
+
+        if (id.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const cache = await getCache(id);
+        const clients = await db.selectFrom('client').select(['id', 'timestamp', 'name', 'len']).where('cache_id', '=', id).execute();
+
+        const timeTaken = Date.now() - start;
+        return reply.view('cache', {
+            cache,
+            clients,
+            stats: {
+                timeTaken
+            }
+        });
+    });
 
     // get by revision (easy shorthand, if possible)
     // app.get('/:game/:build', async (req: any, reply) => {

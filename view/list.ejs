@@ -44,10 +44,16 @@
                     <% for (cache of caches) { %>
                         <tr class="odd:bg-gray-700/50 even:bg-gray-600/50 border-gray-600">
                             <th scope="row" class="px-6 py-4 font-medium text-heading whitespace-nowrap">
-                                <%= cache.build %>
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>"><%= cache.build %></a>
                             </th>
                             <td class="px-6 py-4">
-                                <%= cache.timestamp ? cache.timestamp.toISOString().split('T')[0] : '-' %>
+                                <% if (cache.timestamp) { %>
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>">
+                                    <%= cache.timestamp.toISOString().split('T')[0] %>
+                                </a>
+                                <% } else { %>
+                                -
+                                <% } %>
                             </td>
                             <td class="px-6 py-4">
                                 <% if (game.newspost_url !== null && cache.newspost !== null) { %>
@@ -57,6 +63,7 @@
                                 <% } %>
                             </td>
                             <td class="px-6 py-4 w-1/8">
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>">More details</a>
                                 <a class="hover:text-gray-300" href="/caches/<%= cache.id %>/cache.zip">Download</a>
                             </td>
                         </tr>
