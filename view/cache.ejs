@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title><%= cache.build %> - Lost City Archive</title>
+    <title><%= cache.display_name %> <%= cache.build %> - Lost City Archive</title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/png" href="/favicon.png">
@@ -14,22 +14,42 @@
 <body class="bg-gray-800 text-white">
     <div class="flex justify-center mt-1">
         <div class="flex-col text-center">
-            <h1 class="text-xl"><%= cache.build %></h1>
+            <h1 class="text-xl"><%= cache.display_name %> <%= cache.build %></h1>
             <a class="hover:text-gray-300" href="/list/<%= cache.name %>">Go Back</a>
         </div>
     </div>
 
     <div class="flex justify-center mt-1 mb-1">
         <div class="p-1 text-center w-3/4 relative overflow-x-auto bg-neutral-primary-soft shadow-xs rounded-xl border border-gray-600">
-            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a>
+            <% if (cache.timestamp !== null) { %>
+            Released on <%= cache.timestamp.toISOString().split('T')[0] %>
+            <br>
+            <% } %>
+
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a><br>
+            <% if (cache.js5) { %>
+            <sup>This is a zip export with main_file_cache.dat2 inside.</sup>
+            <% } else if (cache.ondemand) { %>
+            <sup>This is a zip export with main_file_cache.dat inside.</sup>
+            <% } else { %>
+            <sup>This is a zip export with individual files inside.</sup>
+            <% } %>
+
+            <% if (cache.js5 || cache.ondemand) { %>
+            <br>
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/files.zip">Download flat files</a><br>
+            <sup>This is a zip export with individual files inside.</sup>
+            <% } %>
 
             <% if (clients.length) { %>
             <hr class="my-1 bg-gray-600 border-gray-600 border-00">
-            <h1 class="text-xl">Extra Files</h1>
+
+            Related Files<br>
 
             <% for (const client of clients) { %>
                 <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>"><%= client.name %>: <%= client.len %> bytes</a>
-            <% } %><br>
+                <br>
+            <% } %>
             <% } %>
         </div>
     </div>
