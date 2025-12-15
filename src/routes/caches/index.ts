@@ -34,12 +34,68 @@ export default async function (app: FastifyInstance) {
         }
 
         const cache = await getCache(id);
-        const clients = await db.selectFrom('client').select(['id', 'timestamp', 'name', 'len']).where('cache_id', '=', id).execute();
+        const clients = await db
+            .selectFrom('client')
+            .select(['id', 'timestamp', 'name', 'len'])
+            .where('cache_id', '=', id)
+            .execute();
+
+        let data: any[] = [];
+
+        if (cache.js5) {
+            data = await cacheExecute(`cache_js5_${id}`, db
+                .selectFrom('cache_js5')
+                .leftJoin(
+                    'data_js5',
+                    (join) => join
+                        .on('data_js5.game_id', '=', cache.game_id)
+                        .onRef('data_js5.archive', '=', 'cache_js5.archive')
+                        .onRef('data_js5.group', '=', 'cache_js5.group')
+                        .onRef('data_js5.version', '=', 'cache_js5.version')
+                        .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                )
+                .select(['cache_js5.archive', 'cache_js5.group', 'cache_js5.version', 'cache_js5.crc', 'data_js5.len'])
+                .where('cache_id', '=', cache.id)
+            );
+        } else if (cache.ondemand) {
+            data = await cacheExecute(`cache_od_${id}`, db
+                .selectFrom('cache_ondemand')
+                .leftJoin(
+                    'data_ondemand',
+                    (join) => join
+                        .on('data_ondemand.game_id', '=', cache.game_id)
+                        .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                        .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                        .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
+                        .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                )
+                .select(['cache_ondemand.archive', 'cache_ondemand.file', 'cache_ondemand.version', 'cache_ondemand.crc', 'data_ondemand.len'])
+                .where('cache_id', '=', cache.id)
+            );
+        } else {
+            data = await cacheExecute(`cache_jag_${id}`, db
+                .selectFrom('cache_jag')
+                .selectAll()
+                .leftJoin(
+                    'data_jag',
+                    (join) => join
+                        .on('data_jag.game_id', '=', cache.game_id)
+                        .onRef('data_jag.name', '=', 'cache_jag.name')
+                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                )
+                .select(['data_jag.name', 'data_jag.crc', 'data_jag.len'])
+                .where('cache_id', '=', cache.id)
+            );
+        }
+
+        const missing = data.filter(x => x.len === null);
 
         const timeTaken = Date.now() - start;
         return reply.view('cache', {
             cache,
             clients,
+            data,
+            missing,
             stats: {
                 timeTaken
             }

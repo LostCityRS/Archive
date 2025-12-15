@@ -41,14 +41,24 @@
             <sup>This is a zip export with individual files inside.</sup>
             <% } %>
 
+            <hr class="my-1 bg-gray-600 border-gray-600 border-00">
+            <%= data.length - missing.length %> / <%= data.length %> files (<%= Math.trunc((data.length - missing.length) / data.length * 100 * 100) / 100 %>%)<br>
+
+            <% if (cache.jag) { %>
+            <% for (const file of data) { %>
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>"><%= file.name %>: <%= file.len %> bytes</a>
+            <br>
+            <% } %>
+            <% } %>
+
             <% if (clients.length) { %>
             <hr class="my-1 bg-gray-600 border-gray-600 border-00">
 
             Related Files<br>
 
             <% for (const client of clients) { %>
-                <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>"><%= client.name %>: <%= client.len %> bytes</a>
-                <br>
+            <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>"><%= client.name %>: <%= client.len %> bytes</a>
+            <br>
             <% } %>
             <% } %>
         </div>
