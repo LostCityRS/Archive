@@ -2,6 +2,8 @@ import { Kysely, MysqlDialect } from 'kysely';
 import type { Dialect } from 'kysely';
 import { createPool } from 'mysql2';
 
+import { KyselyLRUCache } from 'kysely-cache';
+
 import { DB } from '#/db/types.js';
 
 let dialect: Dialect = new MysqlDialect({
@@ -24,3 +26,5 @@ export const db = new Kysely<DB>({
         // }
     }
 });
+
+export const cacheDb = KyselyLRUCache.createCache<DB>();
