@@ -8,6 +8,19 @@
 			<div class="breadcrumbs text-sm">
 				<ul>
 					<li><a href="/">Home</a></li>
+
+					<% if (typeof breadcrumbs !== "undefined") { %>
+					<% breadcrumbs.forEach(function(crumb) { %>
+					<li>
+						<% if (crumb.href) { %>
+						<a href="<%= crumb.href %>"><%= crumb.label %></a>
+						<% } else { %>
+						<%= crumb.label %>
+						<% } %>
+					</li>
+					<% }); %>
+					<% } %>
+
 					<li><%= title %></li>
 				</ul>
 			</div>
