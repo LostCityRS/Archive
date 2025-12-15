@@ -22,17 +22,23 @@ export default async function (app: FastifyInstance) {
             const js5 = await cacheExecuteTakeFirstOrThrow('index_js5', db
                 .selectFrom('data_js5')
                 .select(db.fn.sum('len').as('sum')));
-            len += parseInt(js5.sum as string);
+            if (js5.sum) {
+                len += parseInt(js5.sum as string);
+            }
 
             const od = await cacheExecuteTakeFirstOrThrow('index_od', db
                 .selectFrom('data_ondemand')
                 .select(db.fn.sum('len').as('sum')));
-            len += parseInt(od.sum as string);
+            if (od.sum) {
+                len += parseInt(od.sum as string);
+            }
 
             const jag = await cacheExecuteTakeFirstOrThrow('index_jag', db
                 .selectFrom('data_jag')
                 .select(db.fn.sum('len').as('sum')));
-            len += parseInt(jag.sum as string);
+            if (jag.sum) {
+                len += parseInt(jag.sum as string);
+            }
         }
 
         const timeTaken = Date.now() - start;
@@ -68,19 +74,25 @@ export default async function (app: FastifyInstance) {
                 .selectFrom('data_js5')
                 .select(db.fn.sum('len').as('sum'))
                 .where('game_id', '=', game.id));
-            len += parseInt(js5.sum as string);
+            if (js5.sum) {
+                len += parseInt(js5.sum as string);
+            }
 
             const od = await cacheExecuteTakeFirstOrThrow(`list_${gameName}_od`, db
                 .selectFrom('data_ondemand')
                 .select(db.fn.sum('len').as('sum'))
                 .where('game_id', '=', game.id));
-            len += parseInt(od.sum as string);
+            if (od.sum) {
+                len += parseInt(od.sum as string);
+            }
 
             const jag = await cacheExecuteTakeFirstOrThrow(`list_${gameName}_jag`, db
                 .selectFrom('data_jag')
                 .select(db.fn.sum('len').as('sum'))
                 .where('game_id', '=', game.id));
-            len += parseInt(jag.sum as string);
+            if (jag.sum) {
+                len += parseInt(jag.sum as string);
+            }
         }
 
         const timeTaken = Date.now() - start;

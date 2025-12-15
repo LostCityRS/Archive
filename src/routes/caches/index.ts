@@ -306,6 +306,7 @@ export default async function (app: FastifyInstance) {
             const cacheData = await db
                 .selectFrom('cache_js5')
                 .selectAll()
+                .where('cache_id', '=', cache.id)
                 .where('archive', '=', archive)
                 .where('group', '=', groupOrFile)
                 .executeTakeFirstOrThrow();
@@ -327,6 +328,7 @@ export default async function (app: FastifyInstance) {
             const cacheData = await db
                 .selectFrom('cache_ondemand')
                 .selectAll()
+                .where('cache_id', '=', cache.id)
                 .where('archive', '=', archive)
                 .where('file', '=', groupOrFile)
                 .executeTakeFirstOrThrow();
@@ -360,6 +362,7 @@ export default async function (app: FastifyInstance) {
         const cacheData = await db
             .selectFrom('cache_jag')
             .selectAll()
+            .where('cache_id', '=', cache.id)
             .where('name', '=', name)
             .executeTakeFirstOrThrow();
 
