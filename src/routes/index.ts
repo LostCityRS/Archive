@@ -16,36 +16,11 @@ export default async function (app: FastifyInstance) {
             .select(db.fn.count('cache.id').as('count'))
             .groupBy('game.id'));
 
-        // sum of all caches in database
-        let len = 0;
-        {
-            const js5 = await cacheExecuteTakeFirstOrThrow('index_js5', db
-                .selectFrom('data_js5')
-                .select(db.fn.sum('len').as('sum')));
-            if (js5.sum) {
-                len += parseInt(js5.sum as string);
-            }
-
-            const od = await cacheExecuteTakeFirstOrThrow('index_od', db
-                .selectFrom('data_ondemand')
-                .select(db.fn.sum('len').as('sum')));
-            if (od.sum) {
-                len += parseInt(od.sum as string);
-            }
-
-            const jag = await cacheExecuteTakeFirstOrThrow('index_jag', db
-                .selectFrom('data_jag')
-                .select(db.fn.sum('len').as('sum')));
-            if (jag.sum) {
-                len += parseInt(jag.sum as string);
-            }
-        }
-
         const timeTaken = Date.now() - start;
         return reply.view('index', {
             games,
             stats: {
-                len,
+                len: 0,
                 timeTaken
             }
         });
@@ -67,40 +42,12 @@ export default async function (app: FastifyInstance) {
             .where('game_id', '=', game.id));
         caches.sort((a: any, b: any) => parseInt(a.build) - parseInt(b.build));
 
-        // sum of all caches in database
-        let len = 0;
-        {
-            const js5 = await cacheExecuteTakeFirstOrThrow(`list_${gameName}_js5`, db
-                .selectFrom('data_js5')
-                .select(db.fn.sum('len').as('sum'))
-                .where('game_id', '=', game.id));
-            if (js5.sum) {
-                len += parseInt(js5.sum as string);
-            }
-
-            const od = await cacheExecuteTakeFirstOrThrow(`list_${gameName}_od`, db
-                .selectFrom('data_ondemand')
-                .select(db.fn.sum('len').as('sum'))
-                .where('game_id', '=', game.id));
-            if (od.sum) {
-                len += parseInt(od.sum as string);
-            }
-
-            const jag = await cacheExecuteTakeFirstOrThrow(`list_${gameName}_jag`, db
-                .selectFrom('data_jag')
-                .select(db.fn.sum('len').as('sum'))
-                .where('game_id', '=', game.id));
-            if (jag.sum) {
-                len += parseInt(jag.sum as string);
-            }
-        }
-
         const timeTaken = Date.now() - start;
         return reply.view('list', {
             game,
             caches,
             stats: {
-                len,
+                len: 0,
                 timeTaken
             }
         });

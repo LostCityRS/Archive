@@ -21,7 +21,10 @@ export const db = new Kysely<DB>({
     log(event) {
         // if (event.level === 'query') {
         //     console.log(event.query.sql);
-        //     console.log(event.query.parameters);
+
+        //     if (event.query.parameters.length) {
+        //         console.log(event.query.parameters);
+        //     }
         // }
     }
 });
@@ -35,7 +38,9 @@ export async function cacheExecute(key: string, query: SelectQueryBuilder<any, a
         return data;
     }
 
+    // console.time(key);
     data = query.execute();
+    // console.timeEnd(key);
     lru.set(key, data);
     return data;
 }
@@ -46,7 +51,9 @@ export async function cacheExecuteTakeFirst(key: string, query: SelectQueryBuild
         return data;
     }
 
+    // console.time(key);
     data = query.executeTakeFirst();
+    // console.timeEnd(key);
     lru.set(key, data);
     return data;
 }
@@ -57,7 +64,9 @@ export async function cacheExecuteTakeFirstOrThrow(key: string, query: SelectQue
         return data;
     }
 
+    // console.time(key);
     data = query.executeTakeFirstOrThrow();
+    // console.timeEnd(key);
     lru.set(key, data);
     return data;
 }
