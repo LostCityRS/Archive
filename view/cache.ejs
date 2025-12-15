@@ -45,7 +45,10 @@
             <hr class="my-1 bg-gray-600 border-gray-600 border-00">
             <% for (const file of data) { %>
             <% if (file.len !== null) { %>
-            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>"><%= file.name %>: <%= file.len %> bytes</a>
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>" title="<%= file.name %>">
+                <%= file.name %>: <%= file.len %> bytes
+            </a><br>
+            <sup>CRC: <%= file.crc %></sup>
             <% } else { %>
             <%= file.name %> (missing)
             <% } %>
@@ -59,7 +62,9 @@
             Related Files<br>
 
             <% for (const client of clients) { %>
-            <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>"><%= client.name %>: <%= client.len %> bytes</a>
+            <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
+                <%= client.name %>: <%= client.len %> bytes
+            </a>
             <br>
             <% } %>
             <% } %>
