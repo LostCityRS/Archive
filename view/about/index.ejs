@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<%- include('_partial/head', { title }); %>
+</head>
+
+<body>
+	<%- include('_partial/header', { title, icon }); %>
+
+	<div class="px-3">
+		<div class="container mx-auto -mt-24">
+			<div class="card card-body bg-base-200 min-h-25 rounded-b-none">
+				<p>
+					<h1 class="text-xl">Welcome to our Archive -- squared!</h1>
+				</p>
+
+				<p>
+					This site is functionally similar to <a class="underline" href="https://archive.openrs2.org">OpenRS2</a> but the scope is a bit larger here.<br>
+					Firstly, OpenRS2 is great, and I wholeheartedly support Graham's effort. I hope it doesn't go anywhere.<br>
+					But we have more needs, and we must save everything we can while we can.<br>
+					Anything outside of RS2/RS3/OSRS is out of scope in OpenRS2. It also doesn't archive any RS2 clients after 2011, or any for RS3/OSRS.<br>
+					We'll serve anything Jagex-related we can collect here so it doesn't bitrot away on someone's drives.
+				</p>
+
+				<p>
+					Feature-wise we store and deduplicate caches/clients similarly to OpenRS2.<br>
+
+					You can download caches in the client format or as flat files:<br>
+					<code>GET /caches/:id/cache.zip</code><br>
+					<code>GET /caches/:id/files.zip</code><br>
+
+					There is an individual file API as well:<br>
+					<code>GET /caches/:id/get/:archive/:groupOrFile</code><br>
+					<code>GET /caches/:id/get/:name</code><br>
+
+					"id" is our internal ID counter that you get by browsing the caches page.
+				</p>
+
+				<p>
+					At some point we will feature tracking/tagging/indexing historical sources -- screenshots/videos/text<br>
+					We will also let people upload prospective caches to be checked by us. No more searching for a file upload host and linking in a Discord.
+				</p>
+			</div>
+
+			<p class="text-right">
+				Made with love ❤️ by Pazaz (<strong>backend</strong>/<em>frontend tweaks</em>) and BigShot (<strong>frontend</strong>)
+			</p>
+		</div>
+	</div>
+</body>
+
+<%- include('_partial/footer'); %>
+
+</html>

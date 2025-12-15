@@ -57,4 +57,11 @@ export default async function (app: FastifyInstance) {
             breadcrumbs: [{ label: 'Caches', href: '/' }]
         });
     });
+
+    app.get('/about', async (req, reply) => {
+        return reply.view('about/index', {
+            title: 'About',
+            icon: 'info',
+        });
+    });
 }
