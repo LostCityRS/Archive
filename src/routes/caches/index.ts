@@ -292,72 +292,63 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    // produce individual cache files for the user (cache_js5)
-    app.get('/:id/js5/:archive/:group', async (req: any, reply) => {
-        const { id, archive, group } = req.params;
+    // produce individual cache files for the user (cache_js5 / cache_ondemand)
+    app.get('/:id/get/:archive/:groupOrFile', async (req: any, reply) => {
+        const { id, archive, groupOrFile } = req.params;
 
-        if (id.length === 0 || archive.length === 0 || group.length === 0) {
+        if (id.length === 0 || archive.length === 0 || groupOrFile.length === 0) {
             throw new Error('Missing route parameters');
         }
 
         const cache = await getCache(id);
 
-        const cacheData = await db
-            .selectFrom('cache_js5')
-            .selectAll()
-            .where('archive', '=', archive)
-            .where('group', '=', group)
-            .executeTakeFirstOrThrow();
+        if (cache.jag) {
+            const cacheData = await db
+                .selectFrom('cache_js5')
+                .selectAll()
+                .where('archive', '=', archive)
+                .where('group', '=', groupOrFile)
+                .executeTakeFirstOrThrow();
 
-        const data = await db
-            .selectFrom('data_js5')
-            .selectAll()
-            .where('game_id', '=', cache.game_id)
-            .where('archive', '=', archive)
-            .where('group', '=', group)
-            .where('version', '=', cacheData.version)
-            .where('crc', '=', cacheData.crc)
-            .executeTakeFirstOrThrow();
+            const data = await db
+                .selectFrom('data_js5')
+                .selectAll()
+                .where('game_id', '=', cache.game_id)
+                .where('archive', '=', archive)
+                .where('group', '=', groupOrFile)
+                .where('version', '=', cacheData.version)
+                .where('crc', '=', cacheData.crc)
+                .executeTakeFirstOrThrow();
 
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="${group}.dat"`);
-        reply.send(data.bytes);
-    });
+            reply.status(200);
+            reply.header('Content-Disposition', `attachment; filename="${groupOrFile}.dat"`);
+            reply.send(data.bytes);
+        } else {
+            const cacheData = await db
+                .selectFrom('cache_ondemand')
+                .selectAll()
+                .where('archive', '=', archive)
+                .where('file', '=', groupOrFile)
+                .executeTakeFirstOrThrow();
 
-    // produce individual cache files for the user (cache_ondemand)
-    app.get('/:id/ondemand/:archive/:file', async (req: any, reply) => {
-        const { id, archive, file } = req.params;
+            const data = await db
+                .selectFrom('data_ondemand')
+                .selectAll()
+                .where('game_id', '=', cache.game_id)
+                .where('archive', '=', archive)
+                .where('file', '=', groupOrFile)
+                .where('version', '=', cacheData.version)
+                .where('crc', '=', cacheData.crc)
+                .executeTakeFirstOrThrow();
 
-        if (id.length === 0 || archive.length === 0 || file.length === 0) {
-            throw new Error('Missing route parameters');
+            reply.status(200);
+            reply.header('Content-Disposition', `attachment; filename="${groupOrFile}.dat"`);
+            reply.send(data.bytes);
         }
-
-        const cache = await getCache(id);
-
-        const cacheData = await db
-            .selectFrom('cache_ondemand')
-            .selectAll()
-            .where('archive', '=', archive)
-            .where('file', '=', file)
-            .executeTakeFirstOrThrow();
-
-        const data = await db
-            .selectFrom('data_ondemand')
-            .selectAll()
-            .where('game_id', '=', cache.game_id)
-            .where('archive', '=', archive)
-            .where('file', '=', file)
-            .where('version', '=', cacheData.version)
-            .where('crc', '=', cacheData.crc)
-            .executeTakeFirstOrThrow();
-
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="${file}.dat"`);
-        reply.send(data.bytes);
     });
 
     // produce individual cache files for the user (cache_jag)
-    app.get('/:id/jag/:name', async (req: any, reply) => {
+    app.get('/:id/get/:name', async (req: any, reply) => {
         const { id, name } = req.params;
 
         if (id.length === 0 || name.length === 0) {
