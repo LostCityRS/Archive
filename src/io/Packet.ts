@@ -93,6 +93,10 @@ export default class Packet {
         return result;
     }
 
+    gSmart2or4(): number {
+        return this.view.getUint8(this.pos) >= 128 ? this.g4() & 0x7fffffff : this.g2();
+    }
+
     gdata(dst: Uint8Array | Int8Array, off: number, len: number): void {
         dst.set(this.data.subarray(this.pos, this.pos + len), off);
         this.pos += len;
