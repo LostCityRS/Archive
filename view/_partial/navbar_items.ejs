@@ -1,4 +1,4 @@
-<li>
+<li class="mr-1">
   <a
     href="/"
     class="<%= title && title.toLowerCase().includes('cache')
@@ -6,5 +6,39 @@
       : '' %>"
   >
     Caches
+  </a>
+</li>
+
+<li class="mr-1">
+  <a
+    disabled
+    class="<%= title && title.toLowerCase().includes('client')
+      ? 'bg-white/20 md:bg-black/20 text-harvest-gold-400'
+      : '' %>"
+  >
+    Clients
+  </a>
+</li>
+
+<li class="mr-1">
+  <a>
+    Sources
+  </a>
+</li>
+
+<li class="mr-1">
+  <a>
+    Upload
+  </a>
+</li>
+
+<li class="mr-1">
+  <a
+    disabled
+    class="<%= title && title.toLowerCase().includes('about')
+      ? 'bg-white/20 md:bg-black/20 text-harvest-gold-400'
+      : '' %>"
+  >
+    About
   </a>
 </li>
