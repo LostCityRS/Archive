@@ -34,6 +34,14 @@ export type cache_ondemand = {
     crc: number;
     essential: number;
 };
+export type cache_source = {
+    id: Generated<number>;
+    cache_id: number;
+    timestamp: Timestamp | null;
+    attribution: string | null;
+    description: string | null;
+    url: string | null;
+};
 export type data_jag = {
     game_id: number;
     name: string;
@@ -77,6 +85,7 @@ export type DB = {
     cache_jag: cache_jag;
     cache_js5: cache_js5;
     cache_ondemand: cache_ondemand;
+    cache_source: cache_source;
     data_jag: data_jag;
     data_js5: data_js5;
     data_ondemand: data_ondemand;

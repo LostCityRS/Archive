@@ -17,7 +17,7 @@ model game {
     name         String
     display_name String
 
-    parent_game Int?
+    parent_game  Int?
     newspost_url String?
 
     @@index([name])
@@ -36,6 +36,18 @@ model cache {
     jag      Boolean
 
     @@index([game_id])
+}
+
+model cache_source {
+    id Int @id @default(autoincrement())
+
+    cache_id    Int
+    timestamp   DateTime?
+    attribution String?
+    description String?
+    url         String?
+
+    @@index([cache_id])
 }
 
 model submission {
