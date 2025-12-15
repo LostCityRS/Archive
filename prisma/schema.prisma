@@ -14,7 +14,7 @@ datasource db {
 model game {
     id Int @id @default(autoincrement())
 
-    name         String
+    name         String @unique
     display_name String
 
     parent_game  Int?

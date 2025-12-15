@@ -13,7 +13,7 @@
     "dev": "bun run --watch src/index.ts & bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --watch",
     "import": "bun run tools/importLocal.ts",
     "importRemote": "bun run tools/importRemote.ts",
-    "start": "bun run src/index.ts && bun run build:css",
+    "start": "bun run build:css && bun run src/index.ts",
     "build:css": "bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --minify"
   },
   "dependencies": {

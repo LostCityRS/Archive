@@ -14,7 +14,12 @@ export default async function (app: FastifyInstance) {
                 (join) => join.onRef('game.id', '=', 'cache.game_id')
             )
             .select(db.fn.count('cache.id').as('count'))
-            .groupBy('game.id'));
+            .groupBy('game.id').orderBy('name', 'asc'));
+
+        // (reverse) forced order:
+        games.sort((a: any, b: any) => a.name === 'oldscape' ? -1 : 0);
+        games.sort((a: any, b: any) => a.name === 'rsclassic' ? -1 : 0);
+        games.sort((a: any, b: any) => a.name === 'runescape' ? -1 : 0);
 
         const timeTaken = Date.now() - start;
         return reply.view('caches/index', {
