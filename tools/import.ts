@@ -147,6 +147,8 @@ export async function importJs5(source: string, gameName: string, build: string,
             await saveJs5(cache.id, cache.game_id, archive, group, version, crc, stream.read(archive, group));
         }
     }
+
+    return cache;
 }
 
 async function saveOnDemand(cacheId: number, gameId: number, archive: number, file: number, version: number, crc: number, essential: boolean, buf: Uint8Array | null) {
@@ -308,6 +310,8 @@ export async function importOnDemand(source: string, gameName: string, build: st
             await saveOnDemand(cache.id, cache.game_id, archive + 1, file, version - 1, crc, essential, stream.read(archive + 1, file));
         }
     }
+
+    return cache;
 }
 
 export async function importJag(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
@@ -315,8 +319,6 @@ export async function importJag(source: string, gameName: string, build: string,
 
     const files = fs.readdirSync(source);
     for (const file of files) {
-        console.log(build, file);
-
         const buf = fs.readFileSync(`${source}/${file}`);
         const crc = Packet.getcrc(buf, 0, buf.length);
 
@@ -341,4 +343,6 @@ export async function importJag(source: string, gameName: string, build: string,
             })
             .execute();
     }
+
+    return cache;
 }

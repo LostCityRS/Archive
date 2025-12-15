@@ -17,7 +17,7 @@ model game {
     name         String
     display_name String
 
-    parent_game Int?
+    parent_game  Int?
     newspost_url String?
 
     @@index([name])
@@ -36,6 +36,18 @@ model cache {
     jag      Boolean
 
     @@index([game_id])
+}
+
+model cache_source {
+    id Int @id @default(autoincrement())
+
+    cache_id    Int
+    timestamp   DateTime?
+    attribution String?
+    description String?
+    url         String?
+
+    @@index([cache_id])
 }
 
 model submission {
@@ -125,5 +137,23 @@ model cache_jag {
     crc      Int
 
     @@id([cache_id, name, crc])
+    @@index([cache_id])
+}
+
+model client {
+    id Int @id @default(autoincrement())
+
+    game_id  Int
+    cache_id Int?
+
+    build     String
+    timestamp DateTime?
+    newspost  String?
+
+    name  String
+    bytes Bytes  @db.LongBlob
+    len   Int
+
+    @@index([game_id])
     @@index([cache_id])
 }

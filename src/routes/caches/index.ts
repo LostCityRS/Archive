@@ -24,8 +24,49 @@ async function getCache(id: number) {
 
 export default async function (app: FastifyInstance) {
     // get by db id
-    // app.get('/:id', async (req: any, reply) => {
-    // });
+    app.get('/:id', async (req: any, reply) => {
+        const start = Date.now();
+
+        const { id } = req.params;
+
+        if (id.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const cache = await getCache(id);
+        const clients = await db
+            .selectFrom('client')
+            .select(['id', 'timestamp', 'name', 'len'])
+            .where('cache_id', '=', id)
+            .execute();
+
+        let data: any[] = [];
+        if (cache.jag) {
+            data = await cacheExecute(`cache_jag_${id}`, db
+                .selectFrom('cache_jag')
+                .selectAll()
+                .leftJoin(
+                    'data_jag',
+                    (join) => join
+                        .on('data_jag.game_id', '=', cache.game_id)
+                        .onRef('data_jag.name', '=', 'cache_jag.name')
+                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                )
+                .select(['data_jag.name', 'data_jag.crc', 'data_jag.len'])
+                .where('cache_id', '=', cache.id)
+            );
+        }
+
+        const timeTaken = Date.now() - start;
+        return reply.view('cache', {
+            cache,
+            clients,
+            data,
+            stats: {
+                timeTaken
+            }
+        });
+    });
 
     // get by revision (easy shorthand, if possible)
     // app.get('/:game/:build', async (req: any, reply) => {

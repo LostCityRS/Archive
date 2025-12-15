@@ -34,10 +34,16 @@
 								<% for (cache of caches) { %>
 								<tr>
 									<td class="w-0 whitespace-nowrap font-medium text-heading">
-										<%= cache.build %>
+										<a class="hover:text-gray-300" href="/caches/<%= cache.id %>"><%= cache.build %></a>
 									</td>
 									<td>
-										<%= cache.timestamp ? cache.timestamp.toISOString().split('T')[0] : '-' %>
+										<% if (cache.timestamp) { %>
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>">
+                                    <%= cache.timestamp.toISOString().split('T')[0] %>
+                                </a>
+                                <% } else { %>
+                                -
+                                <% } %>
 									</td>
 									<td>
 										<% if (game.newspost_url !== null && cache.newspost !== null) { %>
@@ -47,6 +53,7 @@
 										<% } %>
 									</td>
 									<td class="w-0 whitespace-nowrap">
+                                <a class="hover:text-gray-300" href="/caches/<%= cache.id %>">More details</a>
 										<a class="btn btn-sm btn-success" href="/caches/<%= cache.id %>/cache.zip">Download</a>
 									</td>
 								</tr>

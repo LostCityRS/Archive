@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title><%= cache.display_name %> <%= cache.build %> - Lost City Archive</title>
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+
+<body class="bg-gray-800 text-white">
+    <div class="flex justify-center mt-1">
+        <div class="flex-col text-center">
+            <h1 class="text-xl"><%= cache.display_name %> <%= cache.build %></h1>
+            <a class="hover:text-gray-300" href="/list/<%= cache.name %>">Go Back</a>
+        </div>
+    </div>
+
+    <div class="flex justify-center mt-1 mb-1">
+        <div class="p-1 text-center w-3/4 relative overflow-x-auto bg-gray-600/50 shadow-xs rounded-xl border border-gray-600">
+            <% if (cache.timestamp !== null) { %>
+            Released on <%= cache.timestamp.toISOString().split('T')[0] %>
+            <br>
+            <% } %>
+
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a><br>
+            <% if (cache.js5) { %>
+            <sup>This is a zip export with main_file_cache.dat2 inside.</sup>
+            <% } else if (cache.ondemand) { %>
+            <sup>This is a zip export with main_file_cache.dat inside.</sup>
+            <% } else { %>
+            <sup>This is a zip export with individual files inside.</sup>
+            <% } %>
+
+            <% if (cache.js5 || cache.ondemand) { %>
+            <br>
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/files.zip">Download flat files</a><br>
+            <sup>This is a zip export with individual files inside.</sup>
+            <% } %>
+
+            <% if (cache.jag) { %>
+            <hr class="my-1 bg-gray-600 border-gray-600 border-00">
+            <% for (const file of data) { %>
+            <% if (file.len !== null) { %>
+            <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>" title="<%= file.name %>">
+                <%= file.name %>: <%= file.len %> bytes
+            </a><br>
+            <sup>CRC: <%= file.crc %></sup>
+            <% } else { %>
+            <%= file.name %> (missing)
+            <% } %>
+            <br>
+            <% } %>
+            <% } %>
+
+            <% if (clients.length) { %>
+            <hr class="my-1 bg-gray-600 border-gray-600 border-00">
+
+            Related Files<br>
+
+            <% for (const client of clients) { %>
+            <a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
+                <%= client.name %>: <%= client.len %> bytes
+            </a>
+            <br>
+            <% } %>
+            <% } %>
+        </div>
+    </div>
+
+    <div class="flex justify-center mt-1 mb-1">
+        <span class="text-xs">Page: <%= stats.timeTaken %> ms</h1>
+    </div>
+</body>
+
+</html>
