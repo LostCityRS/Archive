@@ -19,6 +19,8 @@ model game {
 
     parent_game Int?
     newspost_url String?
+
+    @@index([name])
 }
 
 model cache {
@@ -32,6 +34,8 @@ model cache {
     js5      Boolean
     ondemand Boolean
     jag      Boolean
+
+    @@index([game_id])
 }
 
 model submission {
@@ -52,10 +56,11 @@ model data_js5 {
     len     Int
 
     @@id([game_id, archive, group, version, crc])
-    @@index([game_id, archive]) // fast lookup by game,archive
-    @@index([game_id, archive, group]) // fast lookup by game,archive,group
-    @@index([game_id, archive, group, version]) // fast lookup by game,archive,group,version
-    @@index([game_id, archive, crc]) // fast lookup by game,archive,crc
+    @@index([game_id])
+    @@index([game_id, archive])
+    @@index([game_id, archive, group])
+    @@index([game_id, archive, group, version])
+    @@index([game_id, archive, crc])
 }
 
 model cache_js5 {
@@ -66,6 +71,8 @@ model cache_js5 {
     crc      Int
 
     @@id([cache_id, archive, group])
+    @@index([cache_id])
+    @@index([cache_id, archive])
 }
 
 // 2004-2006
@@ -79,10 +86,11 @@ model data_ondemand {
     len     Int
 
     @@id([game_id, archive, file, version, crc])
-    @@index([game_id, archive]) // fast lookup by game,archive
-    @@index([game_id, archive, file]) // fast lookup by game,archive,file
-    @@index([game_id, archive, file, version]) // fast lookup by game,archive,file,version
-    @@index([game_id, archive, crc]) // fast lookup by game,archive,crc
+    @@index([game_id])
+    @@index([game_id, archive])
+    @@index([game_id, archive, file])
+    @@index([game_id, archive, file, version])
+    @@index([game_id, archive, crc])
 }
 
 model cache_ondemand {
@@ -94,7 +102,8 @@ model cache_ondemand {
     essential Boolean
 
     @@id([cache_id, archive, file])
-    @@index([cache_id, archive, essential]) // fast lookup by cache_id,archive,essential
+    @@index([cache_id])
+    @@index([cache_id, archive, essential])
 }
 
 // 2001-2004
@@ -106,7 +115,8 @@ model data_jag {
     len     Int
 
     @@id([game_id, name, crc])
-    @@index([game_id, name]) // fast lookup by game,name
+    @@index([game_id])
+    @@index([game_id, name])
 }
 
 model cache_jag {
@@ -115,4 +125,5 @@ model cache_jag {
     crc      Int
 
     @@id([cache_id, name, crc])
+    @@index([cache_id])
 }
