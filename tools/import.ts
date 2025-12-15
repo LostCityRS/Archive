@@ -147,6 +147,8 @@ export async function importJs5(source: string, gameName: string, build: string,
             await saveJs5(cache.id, cache.game_id, archive, group, version, crc, stream.read(archive, group));
         }
     }
+
+    return cache;
 }
 
 async function saveOnDemand(cacheId: number, gameId: number, archive: number, file: number, version: number, crc: number, essential: boolean, buf: Uint8Array | null) {
