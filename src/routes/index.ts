@@ -47,7 +47,11 @@ export default async function (app: FastifyInstance) {
             .selectFrom('cache')
             .selectAll()
             .where('game_id', '=', game.id));
-        caches.sort((a: any, b: any) => parseInt(a.build) - parseInt(b.build));
+
+        // sort build as a revision
+        caches.sort((a: any, b: any) => a.build.indexOf('-') === -1 && b.build.indexOf('-') === -1 ? parseInt(a.build) - parseInt(b.build) : 0);
+        // sort build as a date
+        caches.sort((a: any, b: any) => a.build.indexOf('-') !== -1 && b.build.indexOf('-') !== -1 ? new Date(a.build).valueOf() - new Date(b.build).valueOf() : 0);
 
         const timeTaken = Date.now() - start;
         return reply.view('caches/list', {
