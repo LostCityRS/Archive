@@ -55,7 +55,7 @@ export default class Js5LocalDiskCacheAsync {
             }
             buf.gdata(chunk.data, 8, available);
 
-            this.dat.write(chunk.data);
+            this.dat.write(chunk.data.subarray(0, chunk.pos));
         }
     }
 }
