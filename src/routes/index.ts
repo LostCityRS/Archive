@@ -51,7 +51,9 @@ export default async function (app: FastifyInstance) {
             stats: {
                 len,
                 timeTaken
-            }
+            },
+            title: 'Caches',
+            icon: 'database-zap',
         });
     });
 
@@ -111,7 +113,10 @@ export default async function (app: FastifyInstance) {
             stats: {
                 len,
                 timeTaken
-            }
+            },
+            title: `${game.display_name} Caches`,
+            icon: 'database-zap',
+            breadcrumbs: [{ label: 'Caches', href: '/' }]
         });
     });
 }
