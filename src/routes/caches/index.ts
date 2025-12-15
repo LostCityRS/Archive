@@ -1,8 +1,10 @@
 import { FastifyInstance } from 'fastify';
-import { zipSync } from 'fflate';
+import { Zip, ZipDeflate } from 'fflate';
 import { sql } from 'kysely';
 
 import { db } from '#/db/query.js';
+import FileStreamAsync from '#/io/FileStreamAsync.js';
+import Js5LocalDiskCacheAsync from '#/js5/Js5LocalDiskCacheAsync.js';
 
 async function getCache(id: number) {
     return db
@@ -20,7 +22,19 @@ async function getCache(id: number) {
         .executeTakeFirstOrThrow();
 }
 
-async function getJs5Files(cache: { id: number, game_id: number }) {
+async function listCacheFiles(cache: { id: number, game_id: number, js5: number, ondemand: number, jag: number }) {
+    if (cache.js5) {
+        return listCacheJs5Files(cache);
+    } else if (cache.ondemand) {
+        return listCacheOnDemandFiles(cache);
+    } else if (cache.jag) {
+        return listCacheJagFiles(cache);
+    }
+
+    return [];
+}
+
+async function listCacheJs5Files(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_js5')
         .select(['archive', 'group', 'version', 'crc'])
@@ -47,7 +61,7 @@ async function getJs5Files(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getOnDemandFiles(cache: { id: number, game_id: number }) {
+async function listCacheOnDemandFiles(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_ondemand')
         .select(['archive', 'file', 'version', 'crc', 'essential'])
@@ -73,7 +87,7 @@ async function getOnDemandFiles(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getJagFiles(cache: { id: number, game_id: number }) {
+async function listCacheJagFiles(cache: { id: number, game_id: number }) {
     return db
         .selectFrom('cache_jag')
         .select(['name', 'crc'])
@@ -99,162 +113,274 @@ async function getJagFiles(cache: { id: number, game_id: number }) {
         .execute();
 }
 
-async function getFiles(cache: { id: number, game_id: number, js5: number, ondemand: number, jag: number }) {
-    if (cache.js5) {
-        return getJs5Files(cache);
-    } else if (cache.ondemand) {
-        return getOnDemandFiles(cache);
-    } else if (cache.jag) {
-        return getJagFiles(cache);
-    }
-
-    return [];
-}
-
 export default async function (app: FastifyInstance) {
     // get by db id
-    app.get('/:id', async (req: any, reply) => {
-        const { id } = req.params;
-
-        if (id.length === 0) {
-            throw new Error('Missing route parameters');
-        }
-
-        const cache = await getCache(id);
-        const files = await getFiles(cache);
-
-        const missing = files.filter(f => !f.exists && f.essential);
-        const allMissing = files.filter(f => !f.exists);
-
-        return reply.view('cache/build', {
-            cache,
-            files,
-            missing,
-            allMissing
-        });
-    });
+    // app.get('/:id', async (req: any, reply) => {
+    // });
 
     // get by revision (easy shorthand, if possible)
-    app.get('/:game/:build', async (req: any, reply) => {
-        const { game: gameName, build } = req.params;
-
-        if (gameName.length === 0 || build.length === 0) {
-            throw new Error('Missing route parameters');
-        }
-
-        const game = await db
-            .selectFrom('game')
-            .selectAll()
-            .where('name', '=', gameName)
-            .executeTakeFirstOrThrow();
-
-        const cache = await db
-            .selectFrom('cache')
-            .selectAll()
-            .where('game_id', '=', game.id)
-            .where('build', '=', build)
-            .executeTakeFirstOrThrow();
-
-        return reply.redirect(`/caches/${cache.id}`, 301);
-    });
+    // app.get('/:game/:build', async (req: any, reply) => {
+    // });
 
     // produce a zip of individual cache files for the user
     app.get('/:id/files.zip', async (req: any, reply) => {
-        const { id } = req.params;
+        try {
+            const { id } = req.params;
 
-        if (id.length === 0) {
-            throw new Error('Missing route parameters');
+            if (id.length === 0) {
+                return reply.redirect('/', 302);
+            }
+
+            const cache = await getCache(id);
+
+            reply.raw.writeHead(200, {
+                'Content-Type': 'application/zip',
+                'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+            });
+
+            const zip = new Zip((err, chunk, final) => {
+                if (err) {
+                    reply.raw.end();
+                    return;
+                }
+
+                reply.raw.write(Buffer.from(chunk));
+
+                if (final) {
+                    reply.raw.end();
+                }
+            });
+
+            if (cache.js5) {
+                const cacheData = db
+                    .selectFrom('cache_js5')
+                    .leftJoin(
+                        'data_js5',
+                        (join) => join
+                            .on('data_js5.game_id', '=', cache.game_id)
+                            .onRef('data_js5.archive', '=', 'cache_js5.archive')
+                            .onRef('data_js5.group', '=', 'cache_js5.group')
+                            .onRef('data_js5.version', '=', 'cache_js5.version')
+                            .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_js5.archive', 'cache_js5.group', 'data_js5.bytes'])
+                    .stream();
+
+                for await (const data of cacheData) {
+                    if (data.bytes && data.bytes.length) {
+                        const entry = new ZipDeflate(`${data.archive}/${data.group}.dat`, { level: 0 });
+                        zip.add(entry);
+                        entry.push(data.bytes, true);
+                    }
+                }
+            } else if (cache.ondemand) {
+                const cacheData = db
+                    .selectFrom('cache_ondemand')
+                    .leftJoin(
+                        'data_ondemand',
+                        (join) => join
+                            .on('data_ondemand.game_id', '=', cache.game_id)
+                            .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                            .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                            .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
+                            .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_ondemand.archive', 'cache_ondemand.file', 'data_ondemand.bytes'])
+                    .stream();
+
+                for await (const data of cacheData) {
+                    if (data.bytes && data.bytes.length) {
+                        const entry = new ZipDeflate(`${data.archive}/${data.file}.dat`, { level: 0 });
+                        zip.add(entry);
+                        entry.push(data.bytes, true);
+                    }
+                }
+            } else if (cache.jag) {
+                const cacheData = db
+                    .selectFrom('cache_jag')
+                    .leftJoin(
+                        'data_jag',
+                        (join) => join
+                            .on('data_jag.game_id', '=', cache.game_id)
+                            .onRef('data_jag.name', '=', 'cache_jag.name')
+                            .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_jag.name', 'data_jag.bytes'])
+                    .stream();
+
+                for await (const data of cacheData) {
+                    if (data.bytes && data.bytes.length) {
+                        const entry = new ZipDeflate(data.name, { level: 0 });
+                        zip.add(entry);
+                        entry.push(data.bytes, true);
+                    }
+                }
+            }
+
+            zip.end();
+        } catch (err) {
+            reply.raw.end();
+            console.error(err);
         }
-
-        const cache = await getCache(id);
-
-        const zip: Record<string, Buffer> = {};
-
-        if (cache.js5) {
-            const cacheData = await db
-                .selectFrom('cache_js5')
-                .leftJoin(
-                    'data_js5',
-                    (join) => join
-                        .on('data_js5.game_id', '=', cache.game_id)
-                        .onRef('data_js5.archive', '=', 'cache_js5.archive')
-                        .onRef('data_js5.group', '=', 'cache_js5.group')
-                        .onRef('data_js5.version', '=', 'cache_js5.version')
-                        .onRef('data_js5.crc', '=', 'cache_js5.crc')
-                )
-                .where('cache_id', '=', cache.id)
-                .select(['cache_js5.archive', 'cache_js5.group', 'data_js5.bytes'])
-                .execute();
-
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[`${data.archive}/${data.group}.dat`] = data.bytes;
-                }
-            }
-        } else if (cache.ondemand) {
-            const cacheData = await db
-                .selectFrom('cache_ondemand')
-                .leftJoin(
-                    'data_ondemand',
-                    (join) => join
-                        .on('data_ondemand.game_id', '=', cache.game_id)
-                        .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
-                        .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
-                        .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
-                        .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
-                )
-                .where('cache_id', '=', cache.id)
-                .select(['cache_ondemand.archive', 'cache_ondemand.file', 'data_ondemand.bytes'])
-                .execute();
-
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[`${data.archive}/${data.file}.dat`] = data.bytes;
-                }
-            }
-        } else if (cache.jag) {
-            const cacheData = await db
-                .selectFrom('cache_jag')
-                .leftJoin(
-                    'data_jag',
-                    (join) => join
-                        .on('data_jag.game_id', '=', cache.game_id)
-                        .onRef('data_jag.name', '=', 'cache_jag.name')
-                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
-                )
-                .where('cache_id', '=', cache.id)
-                .select(['cache_jag.name', 'data_jag.bytes'])
-                .execute();
-
-            for (const data of cacheData) {
-                if (data.bytes) {
-                    zip[data.name] = data.bytes;
-                }
-            }
-        }
-
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-files-lostcity#${cache.id}.zip"`);
-        reply.send(zipSync(zip, { level: 0 }));
     });
 
     // produce a cache in the client format and zip it for the user
     app.get('/:id/cache.zip', async (req: any, reply) => {
-        // todo: main_file_cache.dat
-        // todo: main_file_cache.dat2 (expose control over packing music to fit large caches?)
-        // todo: offer jcache too?
+        try {
+            // todo: is it possible to stream instead of working locally?
+            // todo: expose control over packing music to fit large rs3 caches?
+            // todo: offer jcache too?
 
-        const { id } = req.params;
+            const { id } = req.params;
 
-        if (id.length === 0) {
-            throw new Error('Missing route parameters');
+            if (id.length === 0) {
+                return reply.redirect('/', 302);
+            }
+
+            const cache = await getCache(id);
+
+            reply.raw.writeHead(200, {
+                'Content-Type': 'application/zip',
+                'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+            });
+
+            const zip = new Zip((err, chunk, final) => {
+                if (err) {
+                    reply.raw.end();
+                    return;
+                }
+
+                reply.raw.write(Buffer.from(chunk));
+
+                if (final) {
+                    reply.raw.end();
+                }
+            });
+
+            if (cache.js5) {
+                const { archives } = await db
+                    .selectFrom('cache_js5')
+                    .select(db.fn.max('archive').as('archives'))
+                    .where('cache_id', '=', cache.id)
+                    .where('archive', '<', 255)
+                    .executeTakeFirstOrThrow();
+
+                const cacheData = db
+                    .selectFrom('cache_js5')
+                    .leftJoin(
+                        'data_js5',
+                        (join) => join
+                            .on('data_js5.game_id', '=', cache.game_id)
+                            .onRef('data_js5.archive', '=', 'cache_js5.archive')
+                            .onRef('data_js5.group', '=', 'cache_js5.group')
+                            .onRef('data_js5.version', '=', 'cache_js5.version')
+                            .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_js5.archive', 'cache_js5.group', 'cache_js5.version', 'data_js5.bytes'])
+                    .stream();
+
+                const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
+                zip.add(dat);
+
+                const stream = new Js5LocalDiskCacheAsync(archives + 1);
+                stream.dat.on('data', chunk => {
+                    dat.push(Buffer.from(chunk));
+                });
+                stream.dat.on('end', () => {
+                    dat.push(new Uint8Array(0), true);
+                });
+
+                for await (const data of cacheData) {
+                    if (data.bytes) {
+                        stream.write(data.archive, data.group, data.bytes, data.version);
+                    }
+                }
+                stream.dat.end();
+
+                for (let i = 0; i < archives; i++) {
+                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                }
+
+                {
+                    const idx = new ZipDeflate('main_file_cache.idx255', { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
+                }
+            } else if (cache.ondemand) {
+                const cacheData = db
+                    .selectFrom('cache_ondemand')
+                    .leftJoin(
+                        'data_ondemand',
+                        (join) => join
+                            .on('data_ondemand.game_id', '=', cache.game_id)
+                            .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
+                            .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
+                            .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
+                            .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_ondemand.archive', 'cache_ondemand.file', 'cache_ondemand.version', 'data_ondemand.bytes'])
+                    .orderBy('archive', 'asc')
+                    .orderBy('file', 'asc')
+                    .stream();
+
+                const dat = new ZipDeflate('main_file_cache.dat', { level: 1 });
+                zip.add(dat);
+
+                const stream = new FileStreamAsync();
+                stream.dat.on('data', chunk => {
+                    dat.push(Buffer.from(chunk));
+                });
+                stream.dat.on('end', () => {
+                    dat.push(new Uint8Array(0), true);
+                });
+
+                for await (const data of cacheData) {
+                    if (data.bytes) {
+                        stream.write(data.archive, data.file, data.bytes, data.version);
+                    }
+                }
+                stream.dat.end();
+
+                for (let i = 0; i < 5; i++) {
+                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                    zip.add(idx);
+                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                }
+            } else if (cache.jag) {
+                const cacheData = db
+                    .selectFrom('cache_jag')
+                    .leftJoin(
+                        'data_jag',
+                        (join) => join
+                            .on('data_jag.game_id', '=', cache.game_id)
+                            .onRef('data_jag.name', '=', 'cache_jag.name')
+                            .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                    )
+                    .where('cache_id', '=', cache.id)
+                    .select(['cache_jag.name', 'data_jag.bytes'])
+                    .stream();
+
+                for await (const data of cacheData) {
+                    if (data.bytes) {
+                        const entry = new ZipDeflate(data.name, { level: 0 });
+                        zip.add(entry);
+                        entry.push(data.bytes, true);
+                    }
+                }
+            }
+
+            zip.end();
+        } catch (err) {
+            reply.raw.end();
+            console.error(err);
         }
-
-        const cache = await getCache(id);
-
-        reply.status(200);
-        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
-        reply.send();
     });
 
     // produce individual cache files for the user (cache_js5)

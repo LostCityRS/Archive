@@ -63,6 +63,8 @@ export type game = {
     id: Generated<number>;
     name: string;
     display_name: string;
+    parent_game: number | null;
+    newspost_url: string | null;
 };
 export type submission = {
     uuid: string;

@@ -5,37 +5,48 @@ try {
         .insertInto('game')
         .values([{
             name: 'runescape',
-            display_name: 'RuneScape'
+            display_name: 'RuneScape',
+            newspost_url: 'https://runescape.wiki/w/Update:'
         }, {
             name: 'rsclassic',
-            display_name: 'RuneScape Classic'
+            display_name: 'RuneScape Classic',
+            newspost_url: 'https://classic.runescape.wiki/w/Update:'
         }, {
             name: 'oldscape',
-            display_name: 'Old School RuneScape'
+            display_name: 'Old School RuneScape',
+            newspost_url: 'https://oldschool.runescape.wiki/w/Update:'
         }, {
             name: 'darkscape',
-            display_name: 'DarkScape'
+            display_name: 'DarkScape',
+            parent_game: 1 // runescape
         }, {
             name: 'dotd',
-            display_name: 'Dimension of the Damned'
+            display_name: 'Dimension of the Damned',
+            parent_game: 1 // runescape
         }, {
             name: 'runescape-de',
-            display_name: 'RuneScape (DE)'
+            display_name: 'RuneScape (DE)',
+            parent_game: 1 // runescape
         }, {
             name: 'runescape-fr',
-            display_name: 'RuneScape (FR)'
+            display_name: 'RuneScape (FR)',
+            parent_game: 1 // runescape
         }, {
             name: 'runescape-pt',
-            display_name: 'RuneScape (PT)'
+            display_name: 'RuneScape (PT)',
+            parent_game: 1 // runescape
         }, {
             name: 'runescape-beta',
-            display_name: 'RuneScape (Beta)'
+            display_name: 'RuneScape (Beta)',
+            parent_game: 1 // runescape
         }, {
             name: 'oldscape-beta',
-            display_name: 'Old School RuneScape (Beta)'
+            display_name: 'Old School RuneScape (Beta)',
+            parent_game: 3 // oldscape
         }, {
             name: 'worldmap',
-            display_name: 'World Map'
+            display_name: 'World Map',
+            parent_game: 1 // runescape
         }])
         .execute();
 } catch (err) {

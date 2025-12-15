@@ -16,6 +16,9 @@ model game {
 
     name         String
     display_name String
+
+    parent_game Int?
+    newspost_url String?
 }
 
 model cache {

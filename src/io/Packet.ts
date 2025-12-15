@@ -95,7 +95,22 @@ export default class Packet {
 
     gdata(dst: Uint8Array | Int8Array, off: number, len: number): void {
         dst.set(this.data.subarray(this.pos, this.pos + len), off);
-        this.pos += len - off;
+        this.pos += len;
+    }
+
+    p1(value: number): void {
+        this.view.setUint8(this.pos++, value);
+    }
+
+    p2(value: number): void {
+        this.view.setUint16(this.pos, value);
+        this.pos += 2;
+    }
+
+    p3(value: number): void {
+        this.view.setUint8(this.pos++, value >> 16);
+        this.view.setUint16(this.pos, value);
+        this.pos += 2;
     }
 
     pdata(src: Uint8Array, off: number, len: number): void {

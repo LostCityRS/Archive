@@ -6,7 +6,7 @@ import { unzipSync } from 'fflate';
 const args = process.argv.slice(2);
 
 if (args.length < 3) {
-    console.error('example args: rs2 317 ondemand');
+    console.error('example args: runescape 317 ondemand');
     process.exit(1);
 }
 
