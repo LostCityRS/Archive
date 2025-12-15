@@ -58,7 +58,7 @@ export default async function (app: FastifyInstance) {
         }
 
         const timeTaken = Date.now() - start;
-        return reply.view('cache', {
+        return reply.view('caches/build', {
             cache,
             clients,
             data,

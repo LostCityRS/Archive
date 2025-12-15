@@ -17,7 +17,7 @@ export default async function (app: FastifyInstance) {
             .groupBy('game.id'));
 
         const timeTaken = Date.now() - start;
-        return reply.view('index', {
+        return reply.view('caches/index', {
             games,
             stats: {
                 len: 0,
@@ -45,7 +45,7 @@ export default async function (app: FastifyInstance) {
         caches.sort((a: any, b: any) => parseInt(a.build) - parseInt(b.build));
 
         const timeTaken = Date.now() - start;
-        return reply.view('list', {
+        return reply.view('caches/list', {
             game,
             caches,
             stats: {
