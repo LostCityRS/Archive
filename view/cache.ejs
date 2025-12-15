@@ -42,21 +42,6 @@
 							<sup>This is a zip export with individual files inside.</sup>
 							<% } %>
 
-						</div>
-
-						<div class="col-span-5 md:col-span-3">
-
-							<% if (clients.length) { %>
-							Related Files<br>
-
-							<% for (const client of clients) { %>
-							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
-								<%= client.name %>: <%= client.len %> bytes
-							</a>
-							<br>
-							<% } %>
-							<% } %>
-
 							<% if (cache.jag) { %>
 							<hr class="border-t-1 border-white/20 my-1">
 							<% for (const file of data) { %>
@@ -73,8 +58,25 @@
 							<% } %>
 
 						</div>
+
+						<div class="col-span-5 md:col-span-3">
+
+							<% if (clients.length) { %>
+							Related Files<br>
+
+							<% for (const client of clients) { %>
+							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
+								<%= client.name %>: <%= client.len %> bytes
+							</a>
+							<br>
+							<% } %>
+							<% } %>
+
+						</div>
 					</div>
 				</div>
+
+				<hr class="border-t-2 border-white/20">
 
 				<div class="flex justify-center mt-1 mb-1">
 					<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
