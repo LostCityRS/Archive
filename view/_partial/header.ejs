@@ -30,7 +30,9 @@
 				<i data-lucide="<%= icon %>" class="text-harvest-gold-200 size-7"></i>
 				<% } %>
 
+				<% if (typeof noHeaderTitle === 'undefined' || !noHeaderTitle) { %>
 				<h1 class="text-4xl text-harvest-gold-400 font-medium"><%= title %></h1>
+				<% } %>
 			</div>
 		</div>
 	</div>

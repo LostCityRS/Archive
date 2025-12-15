@@ -6,7 +6,7 @@
 </head>
 
 <body>
-	<%- include('./_partial/header', { title }); %>
+	<%- include('./_partial/header', { title, noHeaderTitle: true }); %>
 
 	<div class="px-3">
 		<div class="container mx-auto -mt-24">
@@ -46,8 +46,19 @@
 
 						<div class="col-span-5 md:col-span-3">
 
+							<% if (clients.length) { %>
+							Related Files<br>
+
+							<% for (const client of clients) { %>
+							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
+								<%= client.name %>: <%= client.len %> bytes
+							</a>
+							<br>
+							<% } %>
+							<% } %>
+
 							<% if (cache.jag) { %>
-							<hr class="my-1 bg-gray-600 border-gray-600 border-00">
+							<hr class="border-t-1 border-white/20 my-1">
 							<% for (const file of data) { %>
 							<% if (file.len !== null) { %>
 							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>" title="<%= file.name %>">
@@ -57,19 +68,6 @@
 							<% } else { %>
 							<%= file.name %> (missing)
 							<% } %>
-							<br>
-							<% } %>
-							<% } %>
-
-							<% if (clients.length) { %>
-							<hr class="my-1 bg-gray-600 border-gray-600 border-00">
-
-							Related Files<br>
-
-							<% for (const client of clients) { %>
-							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
-								<%= client.name %>: <%= client.len %> bytes
-							</a>
 							<br>
 							<% } %>
 							<% } %>
