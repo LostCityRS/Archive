@@ -11,7 +11,7 @@ export default class Js5LocalDiskCacheAsync {
         this.dat = new PassThrough();
         this.dat.write(new Uint8Array(520)); // first chunk is always empty
 
-        this.idx[255] = Packet.alloc(archives * 6);
+        this.idx[255] = Packet.alloc((archives + 1) * 6);
         for (let i = 0; i < archives; ++i) {
             this.idx[i] = Packet.alloc(262144 * 6);
         }
