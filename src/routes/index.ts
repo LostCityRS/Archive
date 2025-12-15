@@ -4,6 +4,8 @@ import { cacheDb, db } from '#/db/query.js';
 
 export default async function (app: FastifyInstance) {
     app.get('/', async (req, reply) => {
+        const start = Date.now();
+
         const games = await cacheDb.execute(db
             .selectFrom('game')
             .select(['game.name', 'game.display_name', 'game.parent_game'])
@@ -39,15 +41,19 @@ export default async function (app: FastifyInstance) {
             }
         }
 
+        const timeTaken = Date.now() - start;
         return reply.view('index', {
             games,
             stats: {
-                len
+                len,
+                timeTaken
             }
         });
     });
 
     app.get('/list/:gameName', async (req: any, reply) => {
+        const start = Date.now();
+
         const { gameName } = req.params;
 
         const game = await cacheDb.executeTakeFirstOrThrow(db
@@ -89,11 +95,13 @@ export default async function (app: FastifyInstance) {
             }
         }
 
+        const timeTaken = Date.now() - start;
         return reply.view('list', {
             game,
             caches,
             stats: {
-                len
+                len,
+                timeTaken
             }
         });
     });
