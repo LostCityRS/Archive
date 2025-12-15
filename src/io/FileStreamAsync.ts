@@ -22,6 +22,8 @@ export default class FileStreamAsync {
 
     write(archive: number, file: number, src: Uint8Array, version: number) {
         if (archive !== 0) {
+            version += 1; // because the import process subtracts 1 (correct to do)
+
             // append version trailer
             const tmp = new Uint8Array(src.length + 2);
             tmp.set(src, 0);
