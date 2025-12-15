@@ -20,15 +20,13 @@
     "@fastify/autoload": "^6.3.1",
     "@fastify/static": "^8.3.0",
     "@fastify/view": "^11.1.1",
-    "connect-redis": "^9.0.0",
     "dotenv": "^17.2.3",
     "ejs": "^3.1.10",
     "fastify": "^5.6.2",
     "fflate": "^0.8.2",
     "kysely": "^0.28.8",
-    "kysely-cache": "^1.2.0",
-    "mysql2": "^3.15.3",
-    "redis": "^5.10.0"
+    "lru-cache": "^11.2.4",
+    "mysql2": "^3.15.3"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.17",

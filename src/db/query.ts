@@ -1,5 +1,6 @@
+import { LRUCache } from 'lru-cache';
 import { Kysely, MysqlDialect } from 'kysely';
-import type { Dialect } from 'kysely';
+import type { Dialect, SelectQueryBuilder } from 'kysely';
 import { createPool } from 'mysql2';
 
 import { DB } from '#/db/types.js';
@@ -24,3 +25,39 @@ export const db = new Kysely<DB>({
         // }
     }
 });
+
+const lru = new LRUCache({ max: 500 });
+
+// todo: is it possible to preserve query builder type info?
+export async function cacheExecute(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
+    let data = lru.get(key);
+    if (data) {
+        return data;
+    }
+
+    data = query.execute();
+    lru.set(key, data);
+    return data;
+}
+
+export async function cacheExecuteTakeFirst(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
+    let data = lru.get(key);
+    if (data) {
+        return data;
+    }
+
+    data = query.executeTakeFirst();
+    lru.set(key, data);
+    return data;
+}
+
+export async function cacheExecuteTakeFirstOrThrow(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
+    let data = lru.get(key);
+    if (data) {
+        return data;
+    }
+
+    data = query.executeTakeFirstOrThrow();
+    lru.set(key, data);
+    return data;
+}
