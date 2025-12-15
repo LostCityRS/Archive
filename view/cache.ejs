@@ -41,10 +41,8 @@
             <sup>This is a zip export with individual files inside.</sup>
             <% } %>
 
-            <hr class="my-1 bg-gray-600 border-gray-600 border-00">
-            <%= data.length - missing.length %> / <%= data.length %> files (<%= Math.trunc((data.length - missing.length) / data.length * 100 * 100) / 100 %>%)<br>
-
             <% if (cache.jag) { %>
+            <hr class="my-1 bg-gray-600 border-gray-600 border-00">
             <% for (const file of data) { %>
             <% if (file.len !== null) { %>
             <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>"><%= file.name %>: <%= file.len %> bytes</a>
