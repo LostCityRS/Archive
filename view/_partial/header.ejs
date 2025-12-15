@@ -1,0 +1,37 @@
+<div class="navbar bg-linear-to-tr from-siam-900 to-siam-700 shadow-sm py-5 px-3">
+	<div class="container mx-auto flex flex-col gap-4">
+		<%- include('./_partial/navbar', { title }); %>
+
+		<hr class="border-t-2 border-white/20" />
+
+		<div class="py-4 pb-28">
+			<div class="breadcrumbs text-sm">
+				<ul>
+					<li><a href="/">Home</a></li>
+
+					<% if (typeof breadcrumbs !== "undefined") { %>
+					<% breadcrumbs.forEach(function(crumb) { %>
+					<li>
+						<% if (crumb.href) { %>
+						<a href="<%= crumb.href %>"><%= crumb.label %></a>
+						<% } else { %>
+						<%= crumb.label %>
+						<% } %>
+					</li>
+					<% }); %>
+					<% } %>
+
+					<li><%= title %></li>
+				</ul>
+			</div>
+
+			<div class="flex items-center gap-3">
+				<% if (typeof icon !== "undefined") { %>
+				<i data-lucide="<%= icon %>" class="text-harvest-gold-200 size-7"></i>
+				<% } %>
+
+				<h1 class="text-4xl text-harvest-gold-400 font-medium"><%= title %></h1>
+			</div>
+		</div>
+	</div>
+</div>

@@ -10,10 +10,11 @@
     "db:migrate": "prisma migrate deploy",
     "db:reset": "prisma migrate reset --force",
     "db:schema": "prisma migrate dev",
-    "dev": "bun run --watch src/index.ts",
+    "dev": "bun run --watch src/index.ts & bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --watch",
     "import": "bun run tools/importLocal.ts",
     "importRemote": "bun run tools/importRemote.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts && bun run build:css",
+    "build:css": "bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --minify"
   },
   "dependencies": {
     "@fastify/autoload": "^6.3.1",
@@ -28,10 +29,13 @@
     "mysql2": "^3.15.3"
   },
   "devDependencies": {
+    "@tailwindcss/cli": "^4.1.17",
     "@types/ejs": "^3.1.5",
     "bun-types": "^1.3.4",
+    "daisyui": "^5.5.13",
     "prisma": "6.12.0",
-    "prisma-kysely": "^2.2.1"
+    "prisma-kysely": "^2.2.1",
+    "tailwindcss": "^4.1.17"
   },
   "peerDependencies": {
     "typescript": "^5.9.3"

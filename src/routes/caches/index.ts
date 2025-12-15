@@ -64,7 +64,12 @@ export default async function (app: FastifyInstance) {
             data,
             stats: {
                 timeTaken
-            }
+            },
+            title: `${cache.build} Cache`,
+            breadcrumbs: [
+                { label: 'Caches', href: '/' }, 
+                { label: `${cache.display_name} Caches`, href: `/list/${cache.name}` }
+            ]
         });
     });
 

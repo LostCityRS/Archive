@@ -1,0 +1,28 @@
+<div class="flex flex-1 items-center gap-2 md:gap-8">
+	<!-- Mobile menu -->
+	<div class="dropdown md:hidden">
+		<div tabindex="0" role="button" class="btn btn-ghost">
+			<i data-lucide="menu" class="size-5"></i>
+		</div>
+
+		<ul tabindex="-1" class="menu menu-lg dropdown-content bg-base-100 text-harvest-gold-200 rounded-box z-1 mt-3 w-52 p-2 shadow">
+			<%- include('./_partial/navbar_items', { title }); %>
+		</ul>
+	</div>
+
+	<!-- Logo -->
+	<a href="/" class="flex flex-row items-center gap-4 w-fit">
+		<img src=/img/lostcity-logo-min.webp class="h-12" alt="Lost City" />
+
+		<span class="flex flex-row items-center gap-1 text-2xl">
+			<i data-lucide="archive" class="text-siam-300 size-5" aria-hidden="true"></i>
+
+			Archive
+		</span>
+	</a>
+
+	<!-- Desktop menu -->
+	<ul class="menu menu-horizontal hidden md:flex text-harvest-gold-200 text-base">
+		<%- include('./_partial/navbar_items', { title }); %>
+	</ul>
+</div>
