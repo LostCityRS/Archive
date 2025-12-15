@@ -46,7 +46,11 @@
 
             <% if (cache.jag) { %>
             <% for (const file of data) { %>
+            <% if (file.len !== null) { %>
             <a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>"><%= file.name %>: <%= file.len %> bytes</a>
+            <% } else { %>
+            <%= file.name %> (missing)
+            <% } %>
             <br>
             <% } %>
             <% } %>
