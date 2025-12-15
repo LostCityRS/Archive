@@ -24,7 +24,6 @@
     "fastify": "^5.6.2",
     "fflate": "^0.8.2",
     "kysely": "^0.28.8",
-    "kysely-cache": "^1.2.0",
     "lru-cache": "^11.2.4",
     "mysql2": "^3.15.3"
   },
