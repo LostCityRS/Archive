@@ -33,23 +33,26 @@ function decompress(src: Uint8Array) {
 }
 
 export default class Js5Index {
+    crc = 0;
     version = 0;
     size = 0;
+    capacity = 0;
+
     groupIds = new Int32Array();
     groupNameHash = new Int32Array();
     groupNameHashTable = new Map<number, number>();
-    capacity = 0;
     groupChecksum = new Int32Array();
+    groupUncompressedChecksums = new Int32Array();
+    groupDigests: Uint8Array[] = [];
+    groupLengths = new Int32Array();
+    groupUncompressedLengths = new Int32Array();
     groupVersion = new Int32Array();
     groupSize = new Int32Array();
+    groupCapacity = new Int32Array();
+
     fileIds: (Int32Array | null)[] = [];
     fileNameHash: Int32Array[] = [];
     fileNameHashTable: Map<number, number>[] = [];
-    groupCapacity = new Int32Array();
-
-    packed: (Uint8Array | null)[] = [];
-    unpacked: (Uint8Array | null)[][] = [];
-    crc = 0;
 
     constructor(src?: Uint8Array | null) {
         if (typeof src !== 'undefined' && src) {
@@ -63,19 +66,24 @@ export default class Js5Index {
         const buf = new Packet(decompress(src));
 
         const protocol = buf.g1();
-        if (protocol < 5 || protocol > 7) {
+        if (protocol < 5 || protocol > 8) {
             throw new Error();
         }
 
         if (protocol >= 6) {
             this.version = buf.g4();
+        } else {
+            this.version = 0;
         }
 
         const info = buf.g1();
         const hasNames = (info & 0x1) !== 0;
+        const hasDigests = (info & 0x2) !== 0;
+        const hasLengths = (info & 0x4) !== 0;
+        const hasUncompressedChecksums = (info & 0x8) !== 0;
 
         if (protocol >= 7) {
-            // todo
+            this.size = buf.gSmart2or4();
         } else {
             this.size = buf.g2();
         }
@@ -86,7 +94,7 @@ export default class Js5Index {
 
         for (let i = 0; i < this.size; i++) {
             if (protocol >= 7) {
-                // todo
+                this.groupIds[i] = prevGroupId += buf.gSmart2or4();
             } else {
                 this.groupIds[i] = prevGroupId += buf.g2();
             }
@@ -102,8 +110,6 @@ export default class Js5Index {
         this.groupVersion = new Int32Array(this.capacity);
         this.fileIds = new Array(this.capacity).fill(null);
         this.groupCapacity = new Int32Array(this.capacity);
-        this.packed = new Array(this.capacity).fill(null);
-        this.unpacked = new Array(this.capacity).fill([]);
 
         if (hasNames) {
             this.groupNameHash = new Int32Array(this.capacity);
@@ -123,13 +129,41 @@ export default class Js5Index {
             this.groupChecksum[this.groupIds[i]] = buf.g4();
         }
 
+        if (hasUncompressedChecksums) {
+            this.groupUncompressedChecksums = new Int32Array(this.capacity);
+
+            for (let i: number = 0; i < this.size; i++) {
+                this.groupUncompressedChecksums[this.groupIds[i]] = buf.g4();
+            }
+        }
+
+        if (hasDigests) {
+            this.groupDigests = new Array(this.capacity).fill(null);
+
+            for (let i: number = 0; i < this.size; i++) {
+                const data: Uint8Array = new Uint8Array(64);
+                buf.gdata(data, 0, data.length);
+                this.groupDigests[this.groupIds[i]] = data;
+            }
+        }
+
+        if (hasLengths) {
+            this.groupLengths = new Int32Array(this.capacity);
+            this.groupUncompressedLengths = new Int32Array(this.capacity);
+
+            for (let i: number = 0; i < this.size; i++) {
+                this.groupLengths[this.groupIds[i]] = buf.g4();
+                this.groupUncompressedLengths[this.groupIds[i]] = buf.g4();
+            }
+        }
+
         for (let i = 0; i < this.size; i++) {
             this.groupVersion[this.groupIds[i]] = buf.g4();
         }
 
         for (let i = 0; i < this.size; i++) {
             if (protocol >= 7) {
-                // todo
+                this.groupSize[this.groupIds[i]] = buf.gSmart2or4();
             } else {
                 this.groupSize[this.groupIds[i]] = buf.g2();
             }
@@ -146,7 +180,7 @@ export default class Js5Index {
             for (let j = 0; j < groupSize; j++) {
                 let fileId = 0;
                 if (protocol >= 7) {
-                    // todo
+                    fileId = prevFileId += buf.gSmart2or4();
                 } else {
                     fileId = prevFileId += buf.g2();
                 }

@@ -9,7 +9,7 @@ export default class Js5LocalDiskCache {
         this.dat = new RandomAccessFile(`${dir}/main_file_cache.dat2`);
 
         this.idx[255] = new RandomAccessFile(`${dir}/main_file_cache.idx255`);
-        for (let i: number = 0; i <= archives; i++) {
+        for (let i: number = 0; i < archives; i++) {
             this.idx[i] = new RandomAccessFile(`${dir}/main_file_cache.idx${i}`);
         }
     }

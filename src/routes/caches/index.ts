@@ -301,7 +301,7 @@ export default async function (app: FastifyInstance) {
                 }
                 stream.dat.end();
 
-                for (let i = 0; i < archives; i++) {
+                for (let i = 0; i <= archives; i++) {
                     const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
                     zip.add(idx);
                     idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
