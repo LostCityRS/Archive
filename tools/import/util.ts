@@ -240,7 +240,7 @@ async function saveOnDemand(cacheId: number, gameId: number, archive: number, gr
         .execute();
 }
 
-export async function importOnDemand(source: string, gameName: string, build: string) {
+export async function importOnDemand(source: string, gameName: string, build: string, force: string) {
     const stream = new FileStream(source);
 
     // check if exact cache was added already
@@ -259,24 +259,26 @@ export async function importOnDemand(source: string, gameName: string, build: st
         .execute();
 
     let cache;
-    for (const test of all) {
-        const jags = await db
-            .selectFrom('cache_versioned')
-            .selectAll()
-            .where('cache_id', '=', test.id)
-            .where('archive', '=', 0)
-            .execute();
+    if (typeof force === 'undefined' || force !== 'true') {
+        for (const test of all) {
+            const jags = await db
+                .selectFrom('cache_versioned')
+                .selectAll()
+                .where('cache_id', '=', test.id)
+                .where('archive', '=', 0)
+                .execute();
 
-        let matches = true;
-        for (const jag of jags) {
-            if (jagCrcs[jag.group] !== jag.crc) {
-                matches = false;
+            let matches = true;
+            for (const jag of jags) {
+                if (jagCrcs[jag.group] !== jag.crc) {
+                    matches = false;
+                    break;
+                }
+            }
+            if (matches) {
+                cache = test;
                 break;
             }
-        }
-        if (matches) {
-            cache = test;
-            break;
         }
     }
 

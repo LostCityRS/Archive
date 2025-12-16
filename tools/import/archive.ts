@@ -12,7 +12,7 @@ if (args.length < 1) {
 }
 
 try {
-    const [build] = args;
+    const [build, force] = args;
 
     if (!fs.existsSync('data')) {
         fs.mkdirSync('data');
@@ -35,7 +35,7 @@ try {
         }
     }
 
-    const cache = await importOnDemand(`data/${build}`, 'runescape', build);
+    const cache = await importOnDemand(`data/${build}`, 'runescape', build, force);
 
     if (cache) {
         await db
