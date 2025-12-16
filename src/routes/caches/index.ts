@@ -441,19 +441,19 @@ export default async function (app: FastifyInstance) {
         if (cache.js5) {
             return await db
                 .selectFrom('cache_js5')
-                .selectAll()
+                .select(['archive', 'group', 'version', 'crc'])
                 .where('cache_id', '=', cache.id)
                 .execute();
         } else if (cache.ondemand) {
             return await db
                 .selectFrom('cache_ondemand')
-                .selectAll()
+                .select(['archive', 'file', 'version', 'crc'])
                 .where('cache_id', '=', cache.id)
                 .execute();
         } else if (cache.jag) {
             return await db
                 .selectFrom('cache_jag')
-                .selectAll()
+                .select(['name', 'crc'])
                 .where('cache_id', '=', cache.id)
                 .execute();
         }
