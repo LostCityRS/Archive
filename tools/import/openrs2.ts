@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-import { importJs5 } from '#tools/import.js';
+import { importJs5 } from '#tools/import/util.js';
 import { unzipSync } from 'fflate';
 import { db } from '#/db/query.js';
 

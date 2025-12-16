@@ -11,8 +11,8 @@
     "db:reset": "prisma migrate reset --force",
     "db:schema": "prisma migrate dev",
     "dev": "bun run --watch src/index.ts & bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --watch",
-    "import": "bun run tools/importLocal.ts",
-    "importRemote": "bun run tools/importRemote.ts",
+    "import": "bun run tools/import/local.ts",
+    "import:archive": "bun run tools/import/archive.ts",
     "start": "bun run build:css && bun run src/index.ts",
     "build:css": "bun x tailwindcss -i ./src/styles/tailwind.css -o ./public/css/style.css --minify"
   },

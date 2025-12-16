@@ -1,17 +1,17 @@
 import fs from 'fs';
 
-import { importOnDemand } from '#tools/import.js';
+import { importOnDemand } from '#tools/import/util.js';
 import { unzipSync } from 'fflate';
 
 const args = process.argv.slice(2);
 
-if (args.length < 3) {
-    console.error('example args: runescape 317 ondemand');
+if (args.length < 1) {
+    console.error('example args: 317');
     process.exit(1);
 }
 
 try {
-    const [game, build, era, timestamp, newspost] = args;
+    const [build, timestamp, newspost] = args;
 
     if (!fs.existsSync('data')) {
         fs.mkdirSync('data');
@@ -34,9 +34,7 @@ try {
         }
     }
 
-    if (era === 'ondemand') {
-        await importOnDemand(`data/${build}`, game, build, timestamp, newspost);
-    }
+    await importOnDemand(`data/${build}`, 'runescape', build, timestamp, newspost);
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);

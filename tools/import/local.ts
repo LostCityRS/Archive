@@ -1,4 +1,4 @@
-import { importJag, importJs5, importOnDemand } from '#tools/import.js';
+import { importJag, importJs5, importOnDemand } from '#tools/import/util.js';
 
 const args = process.argv.slice(2);
 

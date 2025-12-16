@@ -151,6 +151,42 @@ export async function importJs5(source: string, gameName: string, build: string,
     return cache;
 }
 
+export async function importJs5Without255(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+    let archives = 0;
+    for (let archive = 0; archive < 255; archive++) {
+        if (fs.existsSync(`${source}/main_file_cache.idx${archive}`)) {
+            archives = archive + 1;
+        }
+    }
+
+    const stream = new Js5LocalDiskCache(source, archives);
+    const cache = await createCache(gameName, build, 'js5', timestamp, newspost);
+
+    for (let archive = 0; archive <= 255; archive++) {
+        if (!fs.existsSync(`${source}/main_file_cache.idx${archive}`)) {
+            continue;
+        }
+
+        const groups = stream.count(archive);
+
+        for (let group = 0; group < groups; group++) {
+            const data = stream.read(archive, group);
+            if (!data) {
+                continue;
+            }
+
+            const buf = new Packet(data);
+            buf.pos = buf.length - 2;
+            const version = buf.g2();
+            const crc = Packet.getcrc(data, 0, data.length - 2);
+
+            await saveJs5(cache.id, cache.game_id, archive, group, version, crc, data);
+        }
+    }
+
+    return cache;
+}
+
 async function saveOnDemand(cacheId: number, gameId: number, archive: number, file: number, version: number, crc: number, essential: boolean, buf: Uint8Array | null) {
     if (buf) {
         if (version !== 0 || crc !== 0) {
