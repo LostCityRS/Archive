@@ -12,12 +12,14 @@
 
 	<!-- Logo -->
 	<a href="/" class="flex flex-row items-center gap-4 w-fit">
-		<img src=/img/lostcity-logo-min.webp class="h-12" alt="Lost City" />
+		<img src="/img/lc-logo-min.webp" alt="Lost City" class="h-10 block lg:hidden" />
+
+		<img src="/img/lostcity-logo-min.webp" alt="" aria-hidden="true" class="h-12 hidden lg:block" />
 
 		<span class="flex flex-row items-center gap-1 text-2xl">
 			<i data-lucide="archive" class="text-siam-300 size-5" aria-hidden="true"></i>
-
-			Archive<sup>^2</sup>
+			Archive
+			<sup class="-ml-1 text-base font-semibold transform-[rotate(6deg)] text-siam-200">^2</sup>
 		</span>
 	</a>
 
