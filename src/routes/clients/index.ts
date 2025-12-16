@@ -41,7 +41,7 @@ export default async function (app: FastifyInstance) {
             stats: {
                 timeTaken
             },
-            title: 'Clients',
+            title: 'Client Files',
             icon: 'computer',
         });
     });

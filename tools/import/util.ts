@@ -240,7 +240,7 @@ async function saveOnDemand(cacheId: number, gameId: number, archive: number, gr
         .execute();
 }
 
-export async function importOnDemand(source: string, gameName: string, build: string, force: string) {
+export async function importOnDemand(source: string, gameName: string, build: string, force?: string) {
     const stream = new FileStream(source);
 
     // check if exact cache was added already
