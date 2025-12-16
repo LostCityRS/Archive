@@ -31,13 +31,13 @@
 								<% for (game of games) { %>
 								<tr>
 									<td class="w-0 whitespace-nowrap">
-										<a class="hover:text-gray-300" href="/list/<%= game.name %>"><%= game.display_name %></a>
+										<a class="hover:text-gray-300" href="/caches/list/<%= game.name %>"><%= game.display_name %></a>
 									</td>
 									<td>
-										<a class="hover:text-gray-300" href="/list/<%= game.name %>"><%= game.count %></a>
+										<a class="hover:text-gray-300" href="/caches/list/<%= game.name %>"><%= game.count %></a>
 									</td>
 									<td class="w-0 whitespace-nowrap">
-										<a class="btn btn-sm btn-info" href="/list/<%= game.name %>">See All</a>
+										<a class="btn btn-sm btn-info" href="/caches/list/<%= game.name %>">See All</a>
 									</td>
 								</tr>
 								<% } %>
