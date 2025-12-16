@@ -26,7 +26,7 @@ export default async function (app: FastifyInstance) {
     app.get('/list', async (req, reply) => {
         const start = Date.now();
 
-        const games = await cacheExecute('index', db
+        const games = await cacheExecute('cache_index', db
             .selectFrom('game')
             .select(['game.name', 'game.display_name'])
             .leftJoin(
@@ -45,7 +45,6 @@ export default async function (app: FastifyInstance) {
         return reply.view('caches/index', {
             games,
             stats: {
-                len: 0,
                 timeTaken
             },
             title: 'Caches',
@@ -58,12 +57,12 @@ export default async function (app: FastifyInstance) {
 
         const { gameName } = req.params;
 
-        const game = await cacheExecuteTakeFirstOrThrow(`list_${gameName}`, db
+        const game = await cacheExecuteTakeFirstOrThrow(`cache_list_${gameName}`, db
             .selectFrom('game')
             .selectAll()
             .where('name', '=', gameName));
 
-        const caches = await cacheExecute(`list_${gameName}_caches`, db
+        const caches = await cacheExecute(`cache_list_${gameName}_caches`, db
             .selectFrom('cache')
             .selectAll()
             .where('game_id', '=', game.id));
@@ -78,7 +77,6 @@ export default async function (app: FastifyInstance) {
             game,
             caches,
             stats: {
-                len: 0,
                 timeTaken
             },
             title: `${game.display_name} Caches`,
@@ -102,8 +100,7 @@ export default async function (app: FastifyInstance) {
             .selectFrom('cache_client')
             .leftJoin(
                 'client',
-                (join) =>
-                    join.onRef('cache_client.client_id', '=', 'client.id')
+                (join) => join.onRef('cache_client.client_id', '=', 'client.id')
             )
             .select(['id', 'timestamp', 'name', 'len'])
             .where('cache_id', '=', id)

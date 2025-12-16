@@ -29,7 +29,7 @@ export const db = new Kysely<DB>({
     }
 });
 
-const lru = new LRUCache({ max: 1000, ttl: 300_000 });
+const lru = new LRUCache({ max: 50, ttl: 300_000 });
 
 // todo: is it possible to preserve query builder type info?
 export async function cacheExecute(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {

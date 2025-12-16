@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<%- include('_partial/head', { title }); %>
+</head>
+
+<body>
+	<%- include('_partial/header', { title, icon }); %>
+
+	<div class="px-3">
+		<div class="container mx-auto -mt-24">
+			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
+
+				<div>
+					<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
+						<table class="table table-zebra">
+							<thead>
+								<tr class="bg-base-100">
+									<th scope="col" class="font-medium!">
+										Build
+									</th>
+									<th scope="col" class="font-medium!">
+										Release Date
+									</th>
+									<th scope="col" class="font-medium!">
+										File Name
+									</th>
+									<th scope="col" class="font-medium!">
+										File Size
+									</th>
+									<th scope="col">
+									</th>
+								</tr>
+							</thead>
+							<tbody>
+								<% for (client of clients) { %>
+								<tr>
+									<td class="w-0 whitespace-nowrap font-medium text-heading">
+										<%= client.build %>
+									</td>
+									<td>
+										<% if (client.timestamp) { %>
+										<a class="hover:text-gray-300" href="/clients/<%= client.id %>">
+											<%= client.timestamp.toISOString().split('T')[0] %>
+										</a>
+										<% } else { %>
+										-
+										<% } %>
+									</td>
+									<td>
+										<%= client.name %>
+									</td>
+									<td>
+										<%= client.len %> bytes
+									</td>
+									<td class="w-0 whitespace-nowrap">
+										<a class="btn btn-sm btn-success" href="/clients/<%= client.id %>/download">
+                                            <i data-lucide="download" class="size-4"></i> 
+
+                                            Download
+                                        </a>
+									</td>
+								</tr>
+								<% } %>
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="flex justify-center mt-1 mb-1">
+					<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
+				</div>
+
+			</div>
+		</div>
+	</div>
+</body>
+
+<%- include('_partial/footer'); %>
+
+</html>

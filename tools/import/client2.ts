@@ -6,7 +6,7 @@ import { db } from '#/db/query.js';
 const args = process.argv.slice(2);
 
 if (args.length < 2) {
-    console.log('args: <source> <cache id>');
+    console.error('args: <source> <cache id>');
     process.exit(1);
 }
 
