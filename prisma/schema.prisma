@@ -17,31 +17,57 @@ model game {
     name         String @unique
     display_name String
 
-    parent_game  Int?
     newspost_url String?
 
     @@index([name])
 }
 
+// ----
+
+model data_versioned {
+    game_id Int
+
+    archive Int   @db.UnsignedTinyInt // archives are 0-255
+    // "group" and "file" are considered interchangeable terms
+    group   Int   @db.UnsignedInt // groups can be >65535
+    version Int   @db.UnsignedInt // versions can be >65535 (i.e. timestamps)
+    crc     Int
+    bytes   Bytes @db.MediumBlob
+    len     Int   @db.UnsignedInt
+
+    @@id([game_id, archive, group, version, crc])
+}
+
+model data_raw {
+    game_id Int
+
+    name  String
+    crc   Int
+    bytes Bytes  @db.MediumBlob
+    len   Int    @db.UnsignedInt
+
+    @@id([game_id, name, crc])
+}
+
 model cache {
-    id Int @id @default(autoincrement())
+    id      Int @id @default(autoincrement())
+    game_id Int
 
-    game_id   Int
-    build     String
-    timestamp DateTime?
-    newspost  String?
+    build       String
+    timestamp   DateTime?
+    newspost    String?
+    description String?
 
-    js5      Boolean
-    ondemand Boolean
-    jag      Boolean
+    versioned Boolean
 
     @@index([game_id])
 }
 
+// internal source tracking
 model cache_source {
-    id Int @id @default(autoincrement())
+    id       Int @id @default(autoincrement())
+    cache_id Int
 
-    cache_id    Int
     timestamp   DateTime?
     attribution String?
     description String?
@@ -50,110 +76,62 @@ model cache_source {
     @@index([cache_id])
 }
 
-model submission {
-    uuid        String  @id
-    attribution String?
-    ip          String
-    user_agent  String
-}
-
-// 2006+
-model data_js5 {
-    game_id Int
-    archive Int   @db.UnsignedTinyInt // archives are 0-255
-    group   Int   @db.UnsignedInt // groups can be >65535
-    version Int   @db.UnsignedInt // versions can be >65535 (timestamps)
-    crc     Int
-    bytes   Bytes @db.MediumBlob
-    len     Int
-
-    @@id([game_id, archive, group, version, crc])
-    @@index([game_id])
-    @@index([game_id, archive])
-    @@index([game_id, archive, group])
-    @@index([game_id, archive, group, version])
-    @@index([game_id, archive, crc])
-}
-
-model cache_js5 {
+model cache_versioned {
     cache_id Int
-    archive  Int
-    group    Int
-    version  Int
-    crc      Int
 
-    @@id([cache_id, archive, group])
-    @@index([cache_id])
-    @@index([cache_id, archive])
-}
-
-// 2004-2006
-model data_ondemand {
-    game_id Int
-    archive Int   @db.UnsignedTinyInt // archives are 0-255
-    file    Int   @db.UnsignedSmallInt // files are 0-65535
-    version Int   @db.UnsignedSmallInt // versions are 0-65535
+    archive Int
+    group   Int
+    version Int
     crc     Int
-    bytes   Bytes @db.MediumBlob
-    len     Int
 
-    @@id([game_id, archive, file, version, crc])
-    @@index([game_id])
-    @@index([game_id, archive])
-    @@index([game_id, archive, file])
-    @@index([game_id, archive, file, version])
-    @@index([game_id, archive, crc])
-}
-
-model cache_ondemand {
-    cache_id  Int
-    archive   Int
-    file      Int
-    version   Int
-    crc       Int
-    essential Boolean
-
-    @@id([cache_id, archive, file])
+    @@id([cache_id, archive, group, version, crc])
     @@index([cache_id])
-    @@index([cache_id, archive, essential])
 }
 
-// 2001-2004
-model data_jag {
-    game_id Int
-    name    String
-    crc     Int
-    bytes   Bytes  @db.MediumBlob
-    len     Int
-
-    @@id([game_id, name, crc])
-    @@index([game_id])
-    @@index([game_id, name])
-}
-
-model cache_jag {
+model cache_raw {
     cache_id Int
-    name     String
-    crc      Int
+
+    name String
+    crc  Int
 
     @@id([cache_id, name, crc])
     @@index([cache_id])
 }
 
+// ----
+
 model client {
-    id Int @id @default(autoincrement())
+    id      Int @id @default(autoincrement())
+    game_id Int
 
-    game_id  Int
-    cache_id Int?
-
-    build     String
-    timestamp DateTime?
-    newspost  String?
+    build       String
+    timestamp   DateTime?
+    newspost    String?
+    description String?
 
     name  String
     bytes Bytes  @db.LongBlob
     len   Int
 
     @@index([game_id])
-    @@index([cache_id])
+}
+
+// internal source tracking
+model client_source {
+    id        Int @id @default(autoincrement())
+    client_id Int
+
+    timestamp   DateTime?
+    attribution String?
+    description String?
+    url         String?
+
+    @@index([client_id])
+}
+
+model cache_client {
+    cache_id  Int
+    client_id Int
+
+    @@id([cache_id, client_id])
 }

@@ -15,15 +15,31 @@ const cache = await db.selectFrom('cache').selectAll().where('id', '=', parseInt
 
 const data = fs.readFileSync(file);
 
-await db
+const client = await db
     .insertInto('client')
     .values({
         game_id: cache.game_id,
-        cache_id: cache.id,
         build: cache.build,
         name: path.basename(file),
         bytes: data,
         len: data.length
+    })
+    .executeTakeFirst();
+
+await db
+    .insertInto('client_source')
+    .values({
+        client_id: Number(client.insertId),
+        timestamp: fs.statSync(file).ctime,
+        description: path.dirname(file)
+    })
+    .execute();
+
+await db
+    .insertInto('cache_client')
+    .values({
+        client_id: Number(client.insertId),
+        cache_id: cache.id
     })
     .execute();
 

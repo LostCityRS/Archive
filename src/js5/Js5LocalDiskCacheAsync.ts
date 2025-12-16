@@ -23,7 +23,6 @@ export default class Js5LocalDiskCacheAsync {
 
     write(archive: number, file: number, src: Uint8Array, version: number) {
         // append version trailer
-        // todo: 2/4 byte trailer switch
         const tmp = new Uint8Array(src.length + 2);
         tmp.set(src, 0);
         tmp[src.length] = version >> 16;

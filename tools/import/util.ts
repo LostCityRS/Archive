@@ -8,11 +8,7 @@ import Packet from '#/io/Packet.js';
 import Js5LocalDiskCache from '#/js5/Js5LocalDiskCache.js';
 import Js5Index from '#/js5/Js5Index.js';
 
-async function createCache(gameName: string, build: string, era: string, timestamp?: string, newspost?: string) {
-    if (era !== 'js5' && era !== 'ondemand' && era !== 'jag') {
-        throw new Error(`Cache era must be js5, ondemand, or jag: "${era}" was provided`);
-    }
-
+async function createCache(gameName: string, build: string, versioned: boolean) {
     const game = await db
         .selectFrom('game')
         .selectAll()
@@ -24,28 +20,21 @@ async function createCache(gameName: string, build: string, era: string, timesta
         .values({
             game_id: game.id,
             build,
-            timestamp,
-            newspost,
 
-            js5: era === 'js5' ? 1 : 0,
-            ondemand: era === 'ondemand' ? 1 : 0,
-            jag: era === 'jag' ? 1 : 0
+            versioned: versioned ? 1 : 0
         })
         .executeTakeFirstOrThrow();
 
     return {
         id: Number(cache.insertId),
-        game_id: game.id,
+        game_id: game.id
     };
 }
 
 async function saveJs5(cacheId: number, gameId: number, archive: number, group: number, version: number, crc: number, buf: Uint8Array | null) {
     if (buf) {
         if (version !== 0 || crc !== 0) {
-            if (Packet.checkcrc(buf, 0, buf.length - 4, crc)) {
-                // 4 byte trailer
-                buf = buf.subarray(0, buf.length - 4);
-            } else if (Packet.checkcrc(buf, 0, buf.length - 2, crc)) {
+            if (Packet.checkcrc(buf, 0, buf.length - 2, crc)) {
                 // 2 byte trailer
                 buf = buf.subarray(0, buf.length - 2);
             } else if (!Packet.checkcrc(buf, 0, buf.length, crc)) {
@@ -56,7 +45,7 @@ async function saveJs5(cacheId: number, gameId: number, archive: number, group: 
         }
 
         await db
-            .insertInto('data_js5')
+            .insertInto('data_versioned')
             .ignore()
             .values({
                 game_id: gameId,
@@ -71,7 +60,7 @@ async function saveJs5(cacheId: number, gameId: number, archive: number, group: 
     }
 
     await db
-        .insertInto('cache_js5')
+        .insertInto('cache_versioned')
         .ignore()
         .values({
             cache_id: cacheId,
@@ -83,7 +72,7 @@ async function saveJs5(cacheId: number, gameId: number, archive: number, group: 
         .execute();
 }
 
-export async function importJs5(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+export async function importJs5(source: string, gameName: string, build: string) {
     const archives = fs.readFileSync(`${source}/main_file_cache.idx255`).length / 6;
     const stream = new Js5LocalDiskCache(source, archives);
 
@@ -99,13 +88,13 @@ export async function importJs5(source: string, gameName: string, build: string,
     const all = await db
         .selectFrom('cache')
         .selectAll()
-        .where('js5', '=', 1)
+        .where('versioned', '=', 1)
         .execute();
 
     let cache;
     for (const test of all) {
         const jags = await db
-            .selectFrom('cache_js5')
+            .selectFrom('cache_versioned')
             .selectAll()
             .where('cache_id', '=', test.id)
             .where('archive', '=', 255)
@@ -125,7 +114,7 @@ export async function importJs5(source: string, gameName: string, build: string,
     }
 
     if (typeof cache === 'undefined') {
-        cache = await createCache(gameName, build, 'js5', timestamp, newspost);
+        cache = await createCache(gameName, build, true);
     }
 
     for (let archive = 0; archive < archives; archive++) {
@@ -151,7 +140,7 @@ export async function importJs5(source: string, gameName: string, build: string,
     return cache;
 }
 
-export async function importJs5WithoutIndex(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+export async function importJs5WithoutIndex(source: string, gameName: string, build: string) {
     let archives = 0;
     for (let archive = 0; archive < 255; archive++) {
         if (fs.existsSync(`${source}/main_file_cache.idx${archive}`)) {
@@ -160,7 +149,7 @@ export async function importJs5WithoutIndex(source: string, gameName: string, bu
     }
 
     const stream = new Js5LocalDiskCache(source, archives);
-    const cache = await createCache(gameName, build, 'js5', timestamp, newspost);
+    const cache = await createCache(gameName, build, true);
 
     // attempt to save any js5index that does exist, then fall back to dumping every archive
     let saved = [];
@@ -210,7 +199,7 @@ export async function importJs5WithoutIndex(source: string, gameName: string, bu
     return cache;
 }
 
-async function saveOnDemand(cacheId: number, gameId: number, archive: number, file: number, version: number, crc: number, essential: boolean, buf: Uint8Array | null) {
+async function saveOnDemand(cacheId: number, gameId: number, archive: number, group: number, version: number, crc: number, buf: Uint8Array | null) {
     if (buf) {
         if (version !== 0 || crc !== 0) {
             if (Packet.checkcrc(buf, 0, buf.length - 2, crc)) {
@@ -224,12 +213,12 @@ async function saveOnDemand(cacheId: number, gameId: number, archive: number, fi
         }
 
         await db
-            .insertInto('data_ondemand')
+            .insertInto('data_versioned')
             .ignore()
             .values({
                 game_id: gameId,
                 archive,
-                file,
+                group,
                 version,
                 crc,
                 bytes: Buffer.from(buf),
@@ -239,20 +228,19 @@ async function saveOnDemand(cacheId: number, gameId: number, archive: number, fi
     }
 
     await db
-        .insertInto('cache_ondemand')
+        .insertInto('cache_versioned')
         .ignore()
         .values({
             cache_id: cacheId,
             archive,
-            file,
+            group,
             version,
-            crc,
-            essential: essential ? 1 : 0
+            crc
         })
         .execute();
 }
 
-export async function importOnDemand(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+export async function importOnDemand(source: string, gameName: string, build: string) {
     const stream = new FileStream(source);
 
     // check if exact cache was added already
@@ -267,13 +255,13 @@ export async function importOnDemand(source: string, gameName: string, build: st
     const all = await db
         .selectFrom('cache')
         .selectAll()
-        .where('ondemand', '=', 1)
+        .where('versioned', '=', 1)
         .execute();
 
     let cache;
     for (const test of all) {
         const jags = await db
-            .selectFrom('cache_ondemand')
+            .selectFrom('cache_versioned')
             .selectAll()
             .where('cache_id', '=', test.id)
             .where('archive', '=', 0)
@@ -281,7 +269,7 @@ export async function importOnDemand(source: string, gameName: string, build: st
 
         let matches = true;
         for (const jag of jags) {
-            if (jagCrcs[jag.file] !== jag.crc) {
+            if (jagCrcs[jag.group] !== jag.crc) {
                 matches = false;
                 break;
             }
@@ -293,11 +281,11 @@ export async function importOnDemand(source: string, gameName: string, build: st
     }
 
     if (typeof cache === 'undefined') {
-        cache = await createCache(gameName, build, 'ondemand', timestamp, newspost);
+        cache = await createCache(gameName, build, true);
     }
 
     for (let i = 1; i < 9; i++) {
-        await saveOnDemand(cache.id, cache.game_id, 0, i, 0, 0, true, stream.read(0, i));
+        await saveOnDemand(cache.id, cache.game_id, 0, i, 0, 0, stream.read(0, i));
     }
 
     if (!stream.has(0, 5)) {
@@ -309,7 +297,6 @@ export async function importOnDemand(source: string, gameName: string, build: st
 
     const versions: number[][] = [];
     const crcs: number[][] = [];
-    const models: number[] = [];
 
     const version: string[] = ['model_version', 'anim_version', 'midi_version', 'map_version'];
     for (let i = 0; i < 4; i++) {
@@ -343,19 +330,6 @@ export async function importOnDemand(source: string, gameName: string, build: st
         }
     }
 
-    let modelIndex = versionlist.read('model_index');
-    if (modelIndex) {
-        const count = versions[0].length;
-
-        for (let i = 0; i < count; i++) {
-            if (i < modelIndex.length) {
-                models[i] = modelIndex[i];
-            } else {
-                models[i] = 0;
-            }
-        }
-    }
-
     for (let archive = 0; archive < 4; archive++) {
         for (let file = 0; file < versions[archive].length; file++) {
             const version = versions[archive][file];
@@ -365,37 +339,40 @@ export async function importOnDemand(source: string, gameName: string, build: st
                 continue;
             }
 
-            const essential = archive === 0 ? models[file] > 0 : true;
-            await saveOnDemand(cache.id, cache.game_id, archive + 1, file, version - 1, crc, essential, stream.read(archive + 1, file));
+            await saveOnDemand(cache.id, cache.game_id, archive + 1, file, version - 1, crc, stream.read(archive + 1, file));
         }
     }
 
     return cache;
 }
 
-export async function importJag(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
-    const cache = await createCache(gameName, build, 'jag', timestamp, newspost);
+export async function importRaw(source: string, gameName: string, build: string) {
+    const cache = await createCache(gameName, build, false);
 
-    const files = fs.readdirSync(source);
+    const files = fs.readdirSync(source, { withFileTypes: true });
     for (const file of files) {
-        const buf = fs.readFileSync(`${source}/${file}`);
+        if (file.isDirectory()) {
+            continue;
+        }
+
+        const buf = fs.readFileSync(`${source}/${file.name}`);
         const crc = Packet.getcrc(buf, 0, buf.length);
 
         await db
-            .insertInto('cache_jag')
+            .insertInto('cache_raw')
             .values({
                 cache_id: cache.id,
-                name: file,
+                name: file.name,
                 crc
             })
             .execute();
 
         await db
-            .insertInto('data_jag')
+            .insertInto('data_raw')
             .ignore()
             .values({
                 game_id: cache.game_id,
-                name: file,
+                name: file.name,
                 crc,
                 bytes: Buffer.from(buf),
                 len: buf.length

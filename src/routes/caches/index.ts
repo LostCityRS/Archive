@@ -18,7 +18,7 @@ async function getCache(id: number) {
         .select([
             'cache.id', 'cache.game_id', 'game.name', 'game.display_name',
             'cache.build', 'cache.timestamp', 'cache.newspost',
-            'cache.js5', 'cache.ondemand', 'cache.jag'
+            'cache.versioned'
         ]));
 }
 
@@ -34,25 +34,26 @@ export default async function (app: FastifyInstance) {
         }
 
         const cache = await getCache(id);
-        const clients = await db
-            .selectFrom('client')
-            .select(['id', 'timestamp', 'name', 'len'])
-            .where('cache_id', '=', id)
-            .execute();
+        const clients: any[] = [];
+        // todo: await db
+        // .selectFrom('client')
+        // .select(['id', 'timestamp', 'name', 'len'])
+        // .where('cache_id', '=', id)
+        // .execute();
 
         let data: any[] = [];
-        if (cache.jag) {
-            data = await cacheExecute(`cache_jag_${id}`, db
-                .selectFrom('cache_jag')
+        if (!cache.versioned) {
+            data = await cacheExecute(`cache_raw_${id}`, db
+                .selectFrom('cache_raw')
                 .selectAll()
                 .leftJoin(
-                    'data_jag',
+                    'data_raw',
                     (join) => join
-                        .on('data_jag.game_id', '=', cache.game_id)
-                        .onRef('data_jag.name', '=', 'cache_jag.name')
-                        .onRef('data_jag.crc', '=', 'cache_jag.crc')
+                        .on('data_raw.game_id', '=', cache.game_id)
+                        .onRef('data_raw.name', '=', 'cache_raw.name')
+                        .onRef('data_raw.crc', '=', 'cache_raw.crc')
                 )
-                .select(['data_jag.name', 'data_jag.crc', 'data_jag.len'])
+                .select(['data_raw.name', 'data_raw.crc', 'data_raw.len'])
                 .where('cache_id', '=', cache.id)
             );
         }
@@ -106,20 +107,20 @@ export default async function (app: FastifyInstance) {
                 }
             });
 
-            if (cache.js5) {
+            if (cache.versioned) {
                 const cacheData = db
-                    .selectFrom('cache_js5')
+                    .selectFrom('cache_versioned')
                     .leftJoin(
-                        'data_js5',
+                        'data_versioned',
                         (join) => join
-                            .on('data_js5.game_id', '=', cache.game_id)
-                            .onRef('data_js5.archive', '=', 'cache_js5.archive')
-                            .onRef('data_js5.group', '=', 'cache_js5.group')
-                            .onRef('data_js5.version', '=', 'cache_js5.version')
-                            .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                            .on('data_versioned.game_id', '=', cache.game_id)
+                            .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+                            .onRef('data_versioned.group', '=', 'cache_versioned.group')
+                            .onRef('data_versioned.version', '=', 'cache_versioned.version')
+                            .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
                     )
                     .where('cache_id', '=', cache.id)
-                    .select(['cache_js5.archive', 'cache_js5.group', 'data_js5.bytes'])
+                    .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
                     .stream();
 
                 for await (const data of cacheData) {
@@ -129,41 +130,18 @@ export default async function (app: FastifyInstance) {
                         entry.push(data.bytes, true);
                     }
                 }
-            } else if (cache.ondemand) {
+            } else {
                 const cacheData = db
-                    .selectFrom('cache_ondemand')
+                    .selectFrom('cache_raw')
                     .leftJoin(
-                        'data_ondemand',
+                        'data_raw',
                         (join) => join
-                            .on('data_ondemand.game_id', '=', cache.game_id)
-                            .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
-                            .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
-                            .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
-                            .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                            .on('data_raw.game_id', '=', cache.game_id)
+                            .onRef('data_raw.name', '=', 'cache_raw.name')
+                            .onRef('data_raw.crc', '=', 'cache_raw.crc')
                     )
                     .where('cache_id', '=', cache.id)
-                    .select(['cache_ondemand.archive', 'cache_ondemand.file', 'data_ondemand.bytes'])
-                    .stream();
-
-                for await (const data of cacheData) {
-                    if (data.bytes && data.bytes.length) {
-                        const entry = new ZipDeflate(`${data.archive}/${data.file}.dat`, { level: 0 });
-                        zip.add(entry);
-                        entry.push(data.bytes, true);
-                    }
-                }
-            } else if (cache.jag) {
-                const cacheData = db
-                    .selectFrom('cache_jag')
-                    .leftJoin(
-                        'data_jag',
-                        (join) => join
-                            .on('data_jag.game_id', '=', cache.game_id)
-                            .onRef('data_jag.name', '=', 'cache_jag.name')
-                            .onRef('data_jag.crc', '=', 'cache_jag.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_jag.name', 'data_jag.bytes'])
+                    .select(['cache_raw.name', 'data_raw.bytes'])
                     .stream();
 
                 for await (const data of cacheData) {
@@ -185,7 +163,6 @@ export default async function (app: FastifyInstance) {
     // produce a cache in the client format and zip it for the user
     app.get('/:id/cache.zip', async (req: any, reply) => {
         try {
-            // todo: is it possible to stream instead of working locally?
             // todo: expose control over packing music to fit large rs3 caches?
             // todo: offer jcache too?
 
@@ -215,111 +192,96 @@ export default async function (app: FastifyInstance) {
                 }
             });
 
-            if (cache.js5) {
+            if (cache.versioned) {
                 const { archives } = await db
-                    .selectFrom('cache_js5')
+                    .selectFrom('cache_versioned')
                     .select(db.fn.max('archive').as('archives'))
                     .where('cache_id', '=', cache.id)
                     .where('archive', '<', 255)
                     .executeTakeFirstOrThrow();
 
                 const cacheData = db
-                    .selectFrom('cache_js5')
+                    .selectFrom('cache_versioned')
                     .leftJoin(
-                        'data_js5',
+                        'data_versioned',
                         (join) => join
-                            .on('data_js5.game_id', '=', cache.game_id)
-                            .onRef('data_js5.archive', '=', 'cache_js5.archive')
-                            .onRef('data_js5.group', '=', 'cache_js5.group')
-                            .onRef('data_js5.version', '=', 'cache_js5.version')
-                            .onRef('data_js5.crc', '=', 'cache_js5.crc')
+                            .on('data_versioned.game_id', '=', cache.game_id)
+                            .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+                            .onRef('data_versioned.group', '=', 'cache_versioned.group')
+                            .onRef('data_versioned.version', '=', 'cache_versioned.version')
+                            .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
                     )
                     .where('cache_id', '=', cache.id)
-                    .select(['cache_js5.archive', 'cache_js5.group', 'cache_js5.version', 'data_js5.bytes'])
+                    .select(['cache_versioned.archive', 'cache_versioned.group', 'cache_versioned.version', 'data_versioned.bytes'])
                     .stream();
 
-                const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
-                zip.add(dat);
+                if (archives !== 5) {
+                    const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
+                    zip.add(dat);
 
-                const stream = new Js5LocalDiskCacheAsync(archives + 1);
-                stream.dat.on('data', chunk => {
-                    dat.push(Buffer.from(chunk));
-                });
-                stream.dat.on('end', () => {
-                    dat.push(new Uint8Array(0), true);
-                });
+                    const stream = new Js5LocalDiskCacheAsync(archives + 1);
+                    stream.dat.on('data', chunk => {
+                        dat.push(Buffer.from(chunk));
+                    });
+                    stream.dat.on('end', () => {
+                        dat.push(new Uint8Array(0), true);
+                    });
 
-                for await (const data of cacheData) {
-                    if (data.bytes) {
-                        stream.write(data.archive, data.group, data.bytes, data.version);
+                    for await (const data of cacheData) {
+                        if (data.bytes) {
+                            stream.write(data.archive, data.group, data.bytes, data.version);
+                        }
+                    }
+                    stream.dat.end();
+
+                    for (let i = 0; i <= archives; i++) {
+                        const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                        zip.add(idx);
+                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                    }
+
+                    {
+                        const idx = new ZipDeflate('main_file_cache.idx255', { level: 1 });
+                        zip.add(idx);
+                        idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
+                    }
+                } else {
+                    const dat = new ZipDeflate('main_file_cache.dat', { level: 1 });
+                    zip.add(dat);
+
+                    const stream = new FileStreamAsync();
+                    stream.dat.on('data', chunk => {
+                        dat.push(Buffer.from(chunk));
+                    });
+                    stream.dat.on('end', () => {
+                        dat.push(new Uint8Array(0), true);
+                    });
+
+                    for await (const data of cacheData) {
+                        if (data.bytes) {
+                            stream.write(data.archive, data.group, data.bytes, data.version);
+                        }
+                    }
+                    stream.dat.end();
+
+                    for (let i = 0; i < 5; i++) {
+                        const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                        zip.add(idx);
+                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
                     }
                 }
-                stream.dat.end();
-
-                for (let i = 0; i <= archives; i++) {
-                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
-                    zip.add(idx);
-                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
-                }
-
-                {
-                    const idx = new ZipDeflate('main_file_cache.idx255', { level: 1 });
-                    zip.add(idx);
-                    idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
-                }
-            } else if (cache.ondemand) {
+            } else {
                 const cacheData = db
-                    .selectFrom('cache_ondemand')
+                    .selectFrom('cache_raw')
                     .leftJoin(
-                        'data_ondemand',
+                        'data_raw',
                         (join) => join
-                            .on('data_ondemand.game_id', '=', cache.game_id)
-                            .onRef('data_ondemand.archive', '=', 'cache_ondemand.archive')
-                            .onRef('data_ondemand.file', '=', 'cache_ondemand.file')
-                            .onRef('data_ondemand.version', '=', 'cache_ondemand.version')
-                            .onRef('data_ondemand.crc', '=', 'cache_ondemand.crc')
+                            .on('data_raw.game_id', '=', cache.game_id)
+                            .onRef('data_raw.name', '=', 'cache_raw.name')
+                            .onRef('data_raw.crc', '=', 'cache_raw.crc')
                     )
                     .where('cache_id', '=', cache.id)
-                    .select(['cache_ondemand.archive', 'cache_ondemand.file', 'cache_ondemand.version', 'data_ondemand.bytes'])
-                    .orderBy('archive', 'asc')
-                    .orderBy('file', 'asc')
-                    .stream();
-
-                const dat = new ZipDeflate('main_file_cache.dat', { level: 1 });
-                zip.add(dat);
-
-                const stream = new FileStreamAsync();
-                stream.dat.on('data', chunk => {
-                    dat.push(Buffer.from(chunk));
-                });
-                stream.dat.on('end', () => {
-                    dat.push(new Uint8Array(0), true);
-                });
-
-                for await (const data of cacheData) {
-                    if (data.bytes) {
-                        stream.write(data.archive, data.file, data.bytes, data.version);
-                    }
-                }
-                stream.dat.end();
-
-                for (let i = 0; i < 5; i++) {
-                    const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
-                    zip.add(idx);
-                    idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
-                }
-            } else if (cache.jag) {
-                const cacheData = db
-                    .selectFrom('cache_jag')
-                    .leftJoin(
-                        'data_jag',
-                        (join) => join
-                            .on('data_jag.game_id', '=', cache.game_id)
-                            .onRef('data_jag.name', '=', 'cache_jag.name')
-                            .onRef('data_jag.crc', '=', 'cache_jag.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_jag.name', 'data_jag.bytes'])
+                    .select(['cache_raw.name', 'data_raw.bytes'])
                     .stream();
 
                 for await (const data of cacheData) {
@@ -338,64 +300,43 @@ export default async function (app: FastifyInstance) {
         }
     });
 
-    // produce individual cache files for the user (cache_js5 / cache_ondemand)
-    app.get('/:id/get/:archive/:groupOrFile', async (req: any, reply) => {
-        const { id, archive, groupOrFile } = req.params;
+    app.get('/:id/get/:archive/:group', async (req: any, reply) => {
+        const { id, archive, group } = req.params;
 
-        if (id.length === 0 || archive.length === 0 || groupOrFile.length === 0) {
+        if (id.length === 0 || archive.length === 0 || group.length === 0) {
             throw new Error('Missing route parameters');
         }
 
         const cache = await getCache(id);
 
-        if (cache.js5) {
-            const cacheData = await db
-                .selectFrom('cache_js5')
-                .selectAll()
-                .where('cache_id', '=', cache.id)
-                .where('archive', '=', archive)
-                .where('group', '=', groupOrFile)
-                .executeTakeFirstOrThrow();
-
-            const data = await db
-                .selectFrom('data_js5')
-                .selectAll()
-                .where('game_id', '=', cache.game_id)
-                .where('archive', '=', archive)
-                .where('group', '=', groupOrFile)
-                .where('version', '=', cacheData.version)
-                .where('crc', '=', cacheData.crc)
-                .executeTakeFirstOrThrow();
-
-            reply.status(200);
-            reply.header('Content-Disposition', `attachment; filename="${groupOrFile}.dat"`);
-            reply.send(data.bytes);
-        } else {
-            const cacheData = await db
-                .selectFrom('cache_ondemand')
-                .selectAll()
-                .where('cache_id', '=', cache.id)
-                .where('archive', '=', archive)
-                .where('file', '=', groupOrFile)
-                .executeTakeFirstOrThrow();
-
-            const data = await db
-                .selectFrom('data_ondemand')
-                .selectAll()
-                .where('game_id', '=', cache.game_id)
-                .where('archive', '=', archive)
-                .where('file', '=', groupOrFile)
-                .where('version', '=', cacheData.version)
-                .where('crc', '=', cacheData.crc)
-                .executeTakeFirstOrThrow();
-
-            reply.status(200);
-            reply.header('Content-Disposition', `attachment; filename="${groupOrFile}.dat"`);
-            reply.send(data.bytes);
+        if (!cache.versioned) {
+            throw new Error('Incorrect cache API');
         }
+
+        const cacheData = await db
+            .selectFrom('cache_versioned')
+            .selectAll()
+            .where('cache_id', '=', cache.id)
+            .where('archive', '=', archive)
+            .where('group', '=', group)
+            .executeTakeFirstOrThrow();
+
+        const data = await db
+            .selectFrom('data_versioned')
+            .selectAll()
+            .where('game_id', '=', cache.game_id)
+            .where('archive', '=', archive)
+            .where('group', '=', group)
+            .where('version', '=', cacheData.version)
+            .where('crc', '=', cacheData.crc)
+            .executeTakeFirstOrThrow();
+
+        reply.status(200);
+        reply.header('Content-Disposition', `attachment; filename="${group}.dat"`);
+        reply.send(data.bytes);
     });
 
-    // produce individual cache files for the user (cache_jag)
+    // produce individual cache files for the user (cache_raw)
     app.get('/:id/get/:name', async (req: any, reply) => {
         const { id, name } = req.params;
 
@@ -405,15 +346,19 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
+        if (cache.versioned) {
+            throw new Error('Incorrect cache API');
+        }
+
         const cacheData = await db
-            .selectFrom('cache_jag')
+            .selectFrom('cache_raw')
             .selectAll()
             .where('cache_id', '=', cache.id)
             .where('name', '=', name)
             .executeTakeFirstOrThrow();
 
         const data = await db
-            .selectFrom('data_jag')
+            .selectFrom('data_raw')
             .selectAll()
             .where('game_id', '=', cache.game_id)
             .where('name', '=', name)
@@ -438,21 +383,15 @@ export default async function (app: FastifyInstance) {
         reply.status(200);
         reply.header('Content-Type', 'application/json');
 
-        if (cache.js5) {
+        if (cache.versioned) {
             return await db
-                .selectFrom('cache_js5')
+                .selectFrom('cache_versioned')
                 .select(['archive', 'group', 'version', 'crc'])
                 .where('cache_id', '=', cache.id)
                 .execute();
-        } else if (cache.ondemand) {
+        } else {
             return await db
-                .selectFrom('cache_ondemand')
-                .select(['archive', 'file', 'version', 'crc'])
-                .where('cache_id', '=', cache.id)
-                .execute();
-        } else if (cache.jag) {
-            return await db
-                .selectFrom('cache_jag')
+                .selectFrom('cache_raw')
                 .select(['name', 'crc'])
                 .where('cache_id', '=', cache.id)
                 .execute();

@@ -17,43 +17,6 @@ try {
             display_name: 'Old School RuneScape',
             newspost_url: 'https://oldschool.runescape.wiki/w/Update:'
         },
-        // runescape
-        {
-            name: 'darkscape',
-            display_name: 'DarkScape',
-            parent_game: 1
-        }, {
-            name: 'dotd',
-            display_name: 'Dimension of the Damned',
-            parent_game: 1
-        }, {
-            name: 'runescape-de',
-            display_name: 'RuneScape (DE)',
-            parent_game: 1
-        }, {
-            name: 'runescape-fr',
-            display_name: 'RuneScape (FR)',
-            parent_game: 1
-        }, {
-            name: 'runescape-pt',
-            display_name: 'RuneScape (PT)',
-            parent_game: 1
-        }, {
-            name: 'runescape-beta',
-            display_name: 'RuneScape (Beta)',
-            parent_game: 1 
-        },
-        {
-            name: 'worldmap',
-            display_name: 'World Map',
-            parent_game: 1
-        },
-        // oldscape
-        {
-            name: 'oldscape-beta',
-            display_name: 'Old School RuneScape (Beta)',
-            parent_game: 3
-        },
         // funorb
         {
             name: 'geoblox',
@@ -193,3 +156,43 @@ try {
 }
 
 process.exit(0);
+
+/*
+// runescape
+{
+    name: 'darkscape',
+    display_name: 'DarkScape',
+    parent_game: 1
+}, {
+    name: 'dotd',
+    display_name: 'Dimension of the Damned',
+    parent_game: 1
+}, {
+    name: 'runescape-de',
+    display_name: 'RuneScape (DE)',
+    parent_game: 1
+}, {
+    name: 'runescape-fr',
+    display_name: 'RuneScape (FR)',
+    parent_game: 1
+}, {
+    name: 'runescape-pt',
+    display_name: 'RuneScape (PT)',
+    parent_game: 1
+}, {
+    name: 'runescape-beta',
+    display_name: 'RuneScape (Beta)',
+    parent_game: 1 
+},
+{
+    name: 'worldmap',
+    display_name: 'World Map',
+    parent_game: 1
+},
+// oldscape
+{
+    name: 'oldscape-beta',
+    display_name: 'Old School RuneScape (Beta)',
+    parent_game: 3
+},
+*/

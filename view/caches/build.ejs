@@ -22,21 +22,19 @@
 							<% } %>
 
 							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a><br>
-							<% if (cache.js5) { %>
-							<sup>This is a zip export with main_file_cache.dat2 inside.</sup>
-							<% } else if (cache.ondemand) { %>
-							<sup>This is a zip export with main_file_cache.dat inside.</sup>
+							<% if (cache.versioned) { %>
+							<sup>This is a zip export with main_file_cache inside.</sup>
 							<% } else { %>
 							<sup>This is a zip export with individual files inside.</sup>
 							<% } %>
 
-							<% if (cache.js5 || cache.ondemand) { %>
+							<% if (cache.versioned) { %>
 							<br>
 							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/files.zip">Download flat files</a><br>
 							<sup>This is a zip export with individual files inside.</sup>
 							<% } %>
 
-							<% if (cache.jag) { %>
+							<% if (!cache.versioned) { %>
 							<hr class="border-t-1 border-white/20 my-1">
 							<% for (const file of data) { %>
 							<% if (file.len !== null) { %>

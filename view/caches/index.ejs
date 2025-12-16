@@ -28,7 +28,7 @@
 								</tr>
 							</thead>
 							<tbody>
-								<% for (game of games) { if (game.parent_game !== null) continue; %>
+								<% for (game of games) { %>
 								<tr>
 									<td class="w-0 whitespace-nowrap">
 										<a class="hover:text-gray-300" href="/list/<%= game.name %>"><%= game.display_name %></a>

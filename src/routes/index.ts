@@ -8,7 +8,7 @@ export default async function (app: FastifyInstance) {
 
         const games = await cacheExecute('index', db
             .selectFrom('game')
-            .select(['game.name', 'game.display_name', 'game.parent_game'])
+            .select(['game.name', 'game.display_name'])
             .leftJoin(
                 'cache',
                 (join) => join.onRef('game.id', '=', 'cache.game_id')

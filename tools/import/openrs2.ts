@@ -13,7 +13,7 @@ if (args.length < 2) {
 }
 
 try {
-    const [openrs2, build, timestamp, newspost] = args;
+    const [openrs2, build] = args;
 
     if (!fs.existsSync('data')) {
         fs.mkdirSync('data');
@@ -40,15 +40,18 @@ try {
         }
     }
 
-    const cache = await importJs5(`data/${openrs2}`, 'runescape', build, timestamp, newspost);
+    const cache = await importJs5(`data/${openrs2}`, 'runescape', build);
     fs.rmSync(`data/${openrs2}`, { recursive: true, force: true });
 
-    await db.insertInto('cache_source').values({
-        cache_id: cache.id,
-        timestamp: new Date(),
-        attribution: 'OpenRS2',
-        url: `https://archive.openrs2.org/caches/runescape/${openrs2}`
-    }).execute();
+    await db
+        .insertInto('cache_source')
+        .values({
+            cache_id: cache.id,
+            timestamp: new Date(),
+            attribution: 'OpenRS2',
+            url: `https://archive.openrs2.org/caches/runescape/${openrs2}`
+        })
+        .execute();
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);

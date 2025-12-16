@@ -2,16 +2,17 @@ import fs from 'fs';
 
 import { importOnDemand } from '#tools/import/util.js';
 import { unzipSync } from 'fflate';
+import { db } from '#/db/query.js';
 
 const args = process.argv.slice(2);
 
 if (args.length < 1) {
-    console.error('example args: 317');
+    console.error('args: <build>');
     process.exit(1);
 }
 
 try {
-    const [build, timestamp, newspost] = args;
+    const [build] = args;
 
     if (!fs.existsSync('data')) {
         fs.mkdirSync('data');
@@ -34,7 +35,19 @@ try {
         }
     }
 
-    await importOnDemand(`data/${build}`, 'runescape', build, timestamp, newspost);
+    const cache = await importOnDemand(`data/${build}`, 'runescape', build);
+
+    if (cache) {
+        await db
+            .insertInto('cache_source')
+            .values({
+                cache_id: cache.id,
+                timestamp: new Date(),
+                attribution: 'Lost City',
+                url: `https://archive.lostcity.rs/cache/packed/${build}.zip`
+            })
+            .execute();
+    }
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);

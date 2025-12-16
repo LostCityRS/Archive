@@ -10,29 +10,17 @@ export type cache = {
     build: string;
     timestamp: Timestamp | null;
     newspost: string | null;
-    js5: number;
-    ondemand: number;
-    jag: number;
+    description: string | null;
+    versioned: number;
 };
-export type cache_jag = {
+export type cache_client = {
+    cache_id: number;
+    client_id: number;
+};
+export type cache_raw = {
     cache_id: number;
     name: string;
     crc: number;
-};
-export type cache_js5 = {
-    cache_id: number;
-    archive: number;
-    group: number;
-    version: number;
-    crc: number;
-};
-export type cache_ondemand = {
-    cache_id: number;
-    archive: number;
-    file: number;
-    version: number;
-    crc: number;
-    essential: number;
 };
 export type cache_source = {
     id: Generated<number>;
@@ -42,37 +30,43 @@ export type cache_source = {
     description: string | null;
     url: string | null;
 };
-export type client = {
-    id: Generated<number>;
-    game_id: number;
-    cache_id: number | null;
-    build: string;
-    timestamp: Timestamp | null;
-    newspost: string | null;
-    name: string;
-    bytes: Buffer;
-    len: number;
-};
-export type data_jag = {
-    game_id: number;
-    name: string;
-    crc: number;
-    bytes: Buffer;
-    len: number;
-};
-export type data_js5 = {
-    game_id: number;
+export type cache_versioned = {
+    cache_id: number;
     archive: number;
     group: number;
     version: number;
     crc: number;
+};
+export type client = {
+    id: Generated<number>;
+    game_id: number;
+    build: string;
+    timestamp: Timestamp | null;
+    newspost: string | null;
+    description: string | null;
+    name: string;
     bytes: Buffer;
     len: number;
 };
-export type data_ondemand = {
+export type client_source = {
+    id: Generated<number>;
+    client_id: number;
+    timestamp: Timestamp | null;
+    attribution: string | null;
+    description: string | null;
+    url: string | null;
+};
+export type data_raw = {
+    game_id: number;
+    name: string;
+    crc: number;
+    bytes: Buffer;
+    len: number;
+};
+export type data_versioned = {
     game_id: number;
     archive: number;
-    file: number;
+    group: number;
     version: number;
     crc: number;
     bytes: Buffer;
@@ -82,25 +76,17 @@ export type game = {
     id: Generated<number>;
     name: string;
     display_name: string;
-    parent_game: number | null;
     newspost_url: string | null;
-};
-export type submission = {
-    uuid: string;
-    attribution: string | null;
-    ip: string;
-    user_agent: string;
 };
 export type DB = {
     cache: cache;
-    cache_jag: cache_jag;
-    cache_js5: cache_js5;
-    cache_ondemand: cache_ondemand;
+    cache_client: cache_client;
+    cache_raw: cache_raw;
     cache_source: cache_source;
+    cache_versioned: cache_versioned;
     client: client;
-    data_jag: data_jag;
-    data_js5: data_js5;
-    data_ondemand: data_ondemand;
+    client_source: client_source;
+    data_raw: data_raw;
+    data_versioned: data_versioned;
     game: game;
-    submission: submission;
 };

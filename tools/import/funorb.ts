@@ -6,7 +6,7 @@ import { importJs5WithoutIndex } from '#tools/import/util.js';
 const args = process.argv.slice(2);
 
 if (args.length < 3) {
-    console.error('example args: <folder> <game> <timestamp>');
+    console.error('args: <source> <game> <build>');
     process.exit(1);
 }
 
@@ -21,8 +21,7 @@ try {
         .insertInto('cache_source')
         .values({
             cache_id: cache.id,
-            timestamp: new Date(),
-            attribution: 'OpenRS2',
+            timestamp: fs.statSync(`${source}/main_file_cache.dat2`).ctime,
             description: source
         })
         .execute();
