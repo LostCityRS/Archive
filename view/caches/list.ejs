@@ -67,6 +67,10 @@
 							</tbody>
 						</table>
 					</div>
+
+					<% if (game.name !== 'runescape' && game.name !== 'oldscape' && game.name !== 'rsclassic') { %>
+					FunOrb caches may have multiple uploads per build, they cannot be deduplicated into one entry as they didn't store Js5Indexes.
+					<% } %>
 				</div>
 
 				<div class="flex justify-center mt-1 mb-1">
