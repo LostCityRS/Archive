@@ -67,7 +67,7 @@ export default async function (app: FastifyInstance) {
             },
             title: `${cache.display_name} ${cache.build} Cache`,
             breadcrumbs: [
-                { label: 'Caches', href: '/' }, 
+                { label: 'Caches', href: '/' },
                 { label: `${cache.display_name} Caches`, href: `/list/${cache.name}` }
             ]
         });
@@ -423,5 +423,39 @@ export default async function (app: FastifyInstance) {
         reply.status(200);
         reply.header('Content-Disposition', `attachment; filename="${name}"`);
         reply.send(data.bytes);
+    });
+
+    // list all the files in the cache
+    app.get('/:id/info.json', async (req: any, reply) => {
+        const { id, name } = req.params;
+
+        if (id.length === 0) {
+            throw new Error('Missing route parameters');
+        }
+
+        const cache = await getCache(id);
+
+        reply.status(200);
+        reply.header('Content-Type', 'application/json');
+
+        if (cache.js5) {
+            return await db
+                .selectFrom('cache_js5')
+                .selectAll()
+                .where('cache_id', '=', cache.id)
+                .execute();
+        } else if (cache.ondemand) {
+            return await db
+                .selectFrom('cache_ondemand')
+                .selectAll()
+                .where('cache_id', '=', cache.id)
+                .execute();
+        } else if (cache.jag) {
+            return await db
+                .selectFrom('cache_jag')
+                .selectAll()
+                .where('cache_id', '=', cache.id)
+                .execute();
+        }
     });
 }
