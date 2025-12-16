@@ -10,7 +10,7 @@ if (args.length < 2) {
     process.exit(1);
 }
 
-const [source, cacheId] = args;
+const [source, cacheId, name] = args;
 
 const cache = await db.selectFrom('cache').selectAll().where('id', '=', parseInt(cacheId)).executeTakeFirstOrThrow();
 
@@ -21,7 +21,7 @@ const client = await db
     .values({
         game_id: cache.game_id,
         build: cache.build,
-        name: path.basename(source),
+        name: name ?? path.basename(source),
         bytes: data,
         len: data.length
     })

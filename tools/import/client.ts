@@ -10,7 +10,7 @@ if (args.length < 3) {
     process.exit(1);
 }
 
-const [source, gameName, build] = args;
+const [source, gameName, build, name] = args;
 
 const game = await db.selectFrom('game').selectAll().where('name', '=', gameName).executeTakeFirstOrThrow();
 
@@ -21,7 +21,7 @@ const client = await db
     .values({
         game_id: game.id,
         build,
-        name: path.basename(source),
+        name: name ?? path.basename(source),
         bytes: data,
         len: data.length
     })
