@@ -151,7 +151,7 @@ export async function importJs5(source: string, gameName: string, build: string,
     return cache;
 }
 
-export async function importJs5Without255(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
+export async function importJs5WithoutIndex(source: string, gameName: string, build: string, timestamp?: string, newspost?: string) {
     let archives = 0;
     for (let archive = 0; archive < 255; archive++) {
         if (fs.existsSync(`${source}/main_file_cache.idx${archive}`)) {
@@ -162,8 +162,31 @@ export async function importJs5Without255(source: string, gameName: string, buil
     const stream = new Js5LocalDiskCache(source, archives);
     const cache = await createCache(gameName, build, 'js5', timestamp, newspost);
 
-    for (let archive = 0; archive <= 255; archive++) {
-        if (!fs.existsSync(`${source}/main_file_cache.idx${archive}`)) {
+    // attempt to save any js5index that does exist, then fall back to dumping every archive
+    let saved = [];
+    for (let archive = 0; archive < archives; archive++) {
+        const index = stream.read(255, archive);
+        if (!index) {
+            continue;
+        }
+
+        const js5 = new Js5Index(index);
+
+        await saveJs5(cache.id, cache.game_id, 255, archive, js5.version, js5.crc, index);
+
+        for (let i = 0; i < js5.size; i++) {
+            const group = js5.groupIds[i];
+            const version = js5.groupVersion[group];
+            const crc = js5.groupChecksum[group];
+
+            await saveJs5(cache.id, cache.game_id, archive, group, version, crc, stream.read(archive, group));
+        }
+
+        saved.push(archive);
+    }
+
+    for (let archive = 0; archive < archives; archive++) {
+        if (saved.indexOf(archive) !== -1) {
             continue;
         }
 

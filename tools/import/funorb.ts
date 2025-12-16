@@ -1,4 +1,4 @@
-import { importJs5Without255 } from '#tools/import/util.js';
+import { importJs5WithoutIndex } from '#tools/import/util.js';
 
 const args = process.argv.slice(2);
 
@@ -10,7 +10,7 @@ if (args.length < 3) {
 try {
     const [source, game, build] = args;
 
-    await importJs5Without255(source, game, build);
+    await importJs5WithoutIndex(source, game, build);
 } catch (err) {
     if (err instanceof Error) {
         console.log(err.message);
