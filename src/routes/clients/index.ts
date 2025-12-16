@@ -75,7 +75,7 @@ export default async function (app: FastifyInstance) {
             },
             title: `${game.display_name} Client Files`,
             icon: 'computer',
-            breadcrumbs: [{ label: 'Client Files', href: '/' }]
+            breadcrumbs: [{ label: 'Client Files', href: '/clients/list' }]
         });
     });
 

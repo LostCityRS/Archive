@@ -81,7 +81,7 @@ export default async function (app: FastifyInstance) {
             },
             title: `${game.display_name} Caches`,
             icon: 'database-zap',
-            breadcrumbs: [{ label: 'Caches', href: '/' }]
+            breadcrumbs: [{ label: 'Caches', href: '/caches/list' }]
         });
     });
 
