@@ -193,12 +193,12 @@ export default async function (app: FastifyInstance) {
             });
 
             if (cache.versioned) {
-                const { archives } = await db
+                const { archives } = await cacheExecuteTakeFirstOrThrow(`cache_${cache.id}_archives`, db
                     .selectFrom('cache_versioned')
                     .select(db.fn.max('archive').as('archives'))
                     .where('cache_id', '=', cache.id)
                     .where('archive', '<', 255)
-                    .executeTakeFirstOrThrow();
+                );
 
                 const cacheData = db
                     .selectFrom('cache_versioned')
@@ -215,7 +215,7 @@ export default async function (app: FastifyInstance) {
                     .select(['cache_versioned.archive', 'cache_versioned.group', 'cache_versioned.version', 'data_versioned.bytes'])
                     .stream();
 
-                if (archives !== 5) {
+                if (archives !== 4) {
                     const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
                     zip.add(dat);
 
