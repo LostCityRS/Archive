@@ -34,12 +34,16 @@ export default async function (app: FastifyInstance) {
         }
 
         const cache = await getCache(id);
-        const clients: any[] = [];
-        // todo: await db
-        // .selectFrom('client')
-        // .select(['id', 'timestamp', 'name', 'len'])
-        // .where('cache_id', '=', id)
-        // .execute();
+        const clients = await db
+            .selectFrom('cache_client')
+            .leftJoin(
+                'client',
+                (join) =>
+                    join.onRef('cache_client.client_id', '=', 'client.id')
+            )
+            .select(['id', 'timestamp', 'name', 'len'])
+            .where('cache_id', '=', id)
+            .execute();
 
         let data: any[] = [];
         if (!cache.versioned) {
