@@ -348,7 +348,7 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        if (cache.jag) {
+        if (cache.js5) {
             const cacheData = await db
                 .selectFrom('cache_js5')
                 .selectAll()
