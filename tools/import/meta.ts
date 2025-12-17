@@ -8,19 +8,6 @@ if (args.length < 3) {
 
 const [gameName, build, timestamp, newspost] = args;
 
-const game = await db
-    .selectFrom('game')
-    .selectAll()
-    .where('name', '=', gameName)
-    .executeTakeFirstOrThrow();
-
-const cache = await db
-    .selectFrom('cache')
-    .selectAll()
-    .where('game_id', '=', game.id)
-    .where('build', '=', build)
-    .executeTakeFirstOrThrow();
-
 const update: any = {};
 
 if (typeof timestamp !== 'undefined') {
@@ -39,29 +26,62 @@ if (typeof newspost !== 'undefined') {
     }
 }
 
+// update cache and clients
 if (!Object.keys(update).length) {
     console.error('no update');
     process.exit(1);
 }
 
-await db
-    .updateTable('cache')
-    .set(update)
-    .where('id', '=', cache.id)
-    .execute();
-
-const clients = await db
-    .selectFrom('cache_client')
+const game = await db
+    .selectFrom('game')
     .selectAll()
-    .where('cache_id', '=', cache.id)
-    .execute();
+    .where('name', '=', gameName)
+    .executeTakeFirstOrThrow();
 
-for (const link of clients) {
+const cache = await db
+    .selectFrom('cache')
+    .selectAll()
+    .where('game_id', '=', game.id)
+    .where('build', '=', build)
+    .executeTakeFirst();
+
+if (cache) {
+    // update cache and linked clients
     await db
-        .updateTable('client')
+        .updateTable('cache')
         .set(update)
-        .where('id', '=', link.client_id)
+        .where('id', '=', cache.id)
         .execute();
+
+    const clients = await db
+        .selectFrom('cache_client')
+        .selectAll()
+        .where('cache_id', '=', cache.id)
+        .execute();
+
+    for (const link of clients) {
+        await db
+            .updateTable('client')
+            .set(update)
+            .where('id', '=', link.client_id)
+            .execute();
+    }
+} else {
+    // update clients
+    const clients = await db
+        .selectFrom('client')
+        .select(['id'])
+        .where('game_id', '=', game.id)
+        .where('build', '=', build)
+        .execute();
+
+    for (const client of clients) {
+        await db
+            .updateTable('client')
+            .set(update)
+            .where('id', '=', client.id)
+            .execute();
+    }
 }
 
 process.exit(0);
