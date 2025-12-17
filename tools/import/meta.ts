@@ -1,24 +1,47 @@
 import { db } from '#/db/query.js';
 
 const args = process.argv.slice(2);
-if (args.length < 2) {
+if (args.length < 3) {
+    console.error('args: <game> <build> <timestamp> <newspost>')
     process.exit(1);
 }
 
-const [id, timestamp, newspost] = args;
+const [gameName, build, timestamp, newspost] = args;
+
+const game = await db
+    .selectFrom('game')
+    .selectAll()
+    .where('name', '=', gameName)
+    .executeTakeFirstOrThrow();
 
 const cache = await db
     .selectFrom('cache')
     .selectAll()
-    .where('id', '=', parseInt(id))
+    .where('game_id', '=', game.id)
+    .where('build', '=', build)
     .executeTakeFirstOrThrow();
 
-const update: any = {
-    timestamp
-};
+const update: any = {};
+
+if (typeof timestamp !== 'undefined') {
+    if (timestamp === 'null') {
+        update.timestamp = null;
+    } else if (timestamp !== '-1') {
+        update.timestamp = timestamp;
+    }
+}
 
 if (typeof newspost !== 'undefined') {
-    update.newspost = newspost;
+    if (newspost === 'null') {
+        update.newspost = null;
+    } else if (newspost !== '-1') {
+        update.newspost = newspost;
+    }
+}
+
+if (!Object.keys(update).length) {
+    console.error('no update');
+    process.exit(1);
 }
 
 await db
