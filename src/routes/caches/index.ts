@@ -10,16 +10,14 @@ import Js5LocalDiskCacheAsync from '#/js5/Js5LocalDiskCacheAsync.js';
 async function getCache(id: number) {
     return cacheExecuteTakeFirstOrThrow(`cache_${id}`, db
         .selectFrom('cache')
+        .selectAll()
         .leftJoin(
             'game',
             (join) => join.onRef('game.id', '=', 'cache.game_id')
         )
+        .select(['cache.id', 'game.name', 'game.display_name'])
         .where('cache.id', '=', id)
-        .select([
-            'cache.id', 'cache.game_id', 'game.name', 'game.display_name',
-            'cache.build', 'cache.timestamp', 'cache.newspost',
-            'cache.versioned'
-        ]));
+    );
 }
 
 export default async function (app: FastifyInstance) {

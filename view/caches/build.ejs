@@ -21,6 +21,20 @@
 							<br>
 							<% } %>
 
+							Raw size:
+							<strong>
+							<% if (cache.len > 1024 * 1024) { %>
+							<%= Math.trunc((cache.len / 1024 / 1024) * 100) / 100 %> MB
+							<% } else if (cache.len > 1024) { %>
+							<%= Math.trunc((cache.len / 1024) * 100) / 100 %> KB
+							<% } else { %>
+							<%= cache.len %> bytes
+							<% } %>
+							</strong>
+							<br>
+
+							Missing <strong><%= cache.missing %></strong> files of <strong><%= cache.total %></strong> tracked.<br>
+
 							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a><br>
 							<% if (cache.versioned) { %>
 							<sup>This is a zip export with main_file_cache inside.</sup>
