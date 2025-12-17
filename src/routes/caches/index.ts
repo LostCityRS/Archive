@@ -152,6 +152,7 @@ export default async function (app: FastifyInstance) {
 
             const cache = await getCache(id);
 
+            reply.hijack();
             reply.raw.writeHead(200, {
                 'Content-Type': 'application/zip',
                 'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
@@ -237,6 +238,7 @@ export default async function (app: FastifyInstance) {
 
             const cache = await getCache(id);
 
+            reply.hijack();
             reply.raw.writeHead(200, {
                 'Content-Type': 'application/zip',
                 'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
