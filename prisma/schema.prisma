@@ -60,6 +60,11 @@ model cache {
 
     versioned Boolean
 
+    // recalculated after imports
+    missing Int @default(0)
+    total   Int @default(0)
+    len     Int @default(0)
+
     @@index([game_id])
 }
 

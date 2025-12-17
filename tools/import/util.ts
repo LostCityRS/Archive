@@ -137,6 +137,7 @@ export async function importJs5(source: string, gameName: string, build: string)
         }
     }
 
+    await recalculateStats(cache.id);
     return cache;
 }
 
@@ -196,6 +197,7 @@ export async function importJs5WithoutIndex(source: string, gameName: string, bu
         }
     }
 
+    await recalculateStats(cache.id);
     return cache;
 }
 
@@ -292,6 +294,7 @@ export async function importOnDemand(source: string, gameName: string, build: st
 
     if (!stream.has(0, 5)) {
         // if a cache is missing versionlist (partially archived) then we have no info to reconstruct the other archives
+        await recalculateStats(cache.id);
         return;
     }
 
@@ -345,6 +348,7 @@ export async function importOnDemand(source: string, gameName: string, build: st
         }
     }
 
+    await recalculateStats(cache.id);
     return cache;
 }
 
@@ -382,5 +386,90 @@ export async function importRaw(source: string, gameName: string, build: string)
             .execute();
     }
 
+    await recalculateStats(cache.id);
     return cache;
+}
+
+export async function recalculateStats(cacheId: number) {
+    const cache = await db
+        .selectFrom('cache')
+        .select(['id', 'game_id', 'versioned'])
+        .where('id', '=', cacheId)
+        .executeTakeFirstOrThrow();
+
+    if (cache.versioned) {
+        const cacheData = await db
+            .selectFrom('cache_versioned')
+            .leftJoin(
+                'data_versioned',
+                (join) => join
+                    .on('data_versioned.game_id', '=', cache.game_id)
+                    .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+                    .onRef('data_versioned.group', '=', 'cache_versioned.group')
+                    .onRef('data_versioned.version', '=', 'cache_versioned.version')
+                    .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
+            )
+            .select(['data_versioned.len'])
+            .where('cache_id', '=', cache.id)
+            .execute();
+
+        let missing = 0;
+        let total = 0;
+        let len = 0;
+        for (const data of cacheData) {
+            if (data.len !== null) {
+                len += data.len;
+            } else {
+                missing++;
+            }
+
+            total++;
+        }
+
+        await db
+            .updateTable('cache')
+            .set({
+                missing,
+                total,
+                len
+            })
+            .where('id', '=', cache.id)
+            .execute();
+    } else {
+        const cacheData = await db
+            .selectFrom('cache_raw')
+            .leftJoin(
+                'data_raw',
+                (join) => join
+                    .on('data_raw.game_id', '=', cache.game_id)
+                    .onRef('data_raw.name', '=', 'cache_raw.name')
+                    .onRef('data_raw.crc', '=', 'cache_raw.crc')
+            )
+            .select(['data_raw.len'])
+            .where('cache_id', '=', cache.id)
+            .execute();
+
+        let missing = 0;
+        let total = 0;
+        let len = 0;
+        for (const data of cacheData) {
+            if (data.len !== null) {
+                len += data.len;
+            } else {
+                missing++;
+            }
+
+            total++;
+        }
+
+        await db
+            .updateTable('cache')
+            .set({
+                missing,
+                total,
+                len
+            })
+            .where('id', '=', cache.id)
+            .execute();
+    }
 }

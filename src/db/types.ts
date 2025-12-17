@@ -12,6 +12,9 @@ export type cache = {
     newspost: string | null;
     description: string | null;
     versioned: number;
+    missing: Generated<number>;
+    total: Generated<number>;
+    len: Generated<number>;
 };
 export type cache_client = {
     cache_id: number;
