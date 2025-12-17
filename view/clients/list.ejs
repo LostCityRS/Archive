@@ -12,6 +12,9 @@
 		<div class="container mx-auto -mt-24">
 			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
 
+				<% const hasTimestamp = clients.find(x => x.timestamp); %>
+				<% const hasNewspost = clients.find(x => x.newspost); %>
+
 				<div>
 					<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
 						<table class="table table-zebra">
@@ -20,9 +23,16 @@
 									<th scope="col" class="font-medium!">
 										Build
 									</th>
+									<% if (hasTimestamp) { %>
 									<th scope="col" class="font-medium!">
 										Timestamp
 									</th>
+									<% } %>
+									<% if (hasNewspost) { %>
+									<th scope="col" class="font-medium!">
+										News Post
+									</th>
+									<% } %>
 									<th scope="col" class="font-medium!">
 										File Name
 									</th>
@@ -39,6 +49,7 @@
 									<td class="w-0 whitespace-nowrap font-medium text-heading">
 										<%= client.build %>
 									</td>
+									<% if (hasNewspost) { %>
 									<td>
 										<% if (client.timestamp) { %>
 											<%= client.timestamp.toISOString().split('T')[0] %>
@@ -46,6 +57,16 @@
 										-
 										<% } %>
 									</td>
+									<% } %>
+									<% if (hasNewspost) { %>
+									<td>
+										<% if (game.newspost_url !== null && client.newspost !== null) { %>
+										<a class="hover:text-gray-300" href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>" rel="noreferrer"><%= client.newspost %></a>
+										<% } else { %>
+										<%= client.newspost ?? '-' %>
+										<% } %>
+									</td>
+									<% } %>
 									<td>
 										<%= client.name %>
 									</td>

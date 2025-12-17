@@ -12,20 +12,28 @@
 		<div class="container mx-auto -mt-24">
 			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
 
+				<% const hasTimestamp = caches.find(x => x.timestamp); %>
+				<% const hasNewspost = caches.find(x => x.newspost); %>
+
 				<div>
 					<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
 						<table class="table table-zebra">
+
 							<thead>
 								<tr class="bg-base-100">
 									<th scope="col" class="font-medium!">
 										Build
 									</th>
+									<% if (hasTimestamp) { %>
 									<th scope="col" class="font-medium!">
 										Timestamp
 									</th>
+									<% } %>
+									<% if (hasNewspost) { %>
 									<th scope="col" class="font-medium!">
 										News Post
 									</th>
+									<% } %>
 									<th scope="col">
 									</th>
 								</tr>
@@ -36,6 +44,7 @@
 									<td class="w-0 whitespace-nowrap font-medium text-heading">
 										<a class="hover:text-gray-300" href="/caches/<%= cache.id %>"><%= cache.build %></a>
 									</td>
+									<% if (hasTimestamp) { %>
 									<td>
 										<% if (cache.timestamp) { %>
 										<a class="hover:text-gray-300" href="/caches/<%= cache.id %>">
@@ -45,6 +54,8 @@
 										-
 										<% } %>
 									</td>
+									<% } %>
+									<% if (hasNewspost) { %>
 									<td>
 										<% if (game.newspost_url !== null && cache.newspost !== null) { %>
 										<a class="hover:text-gray-300" href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>" rel="noreferrer"><%= cache.newspost %></a>
@@ -52,6 +63,7 @@
 										<%= cache.newspost ?? '-' %>
 										<% } %>
 									</td>
+									<% } %>
 									<td class="w-0 whitespace-nowrap">
 										<a class="btn btn-sm btn-info" href="/caches/<%= cache.id %>" title="<%= cache.id %>">
                                             More details
