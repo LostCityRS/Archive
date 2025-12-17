@@ -66,6 +66,7 @@ model cache {
     len     Int @default(0)
 
     @@index([game_id])
+    @@index([game_id, build])
 }
 
 // internal source tracking
@@ -119,6 +120,7 @@ model client {
     len   Int
 
     @@index([game_id])
+    @@index([game_id, build])
 }
 
 // internal source tracking

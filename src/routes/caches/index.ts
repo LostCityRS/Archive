@@ -24,7 +24,7 @@ export default async function (app: FastifyInstance) {
     app.get('/list', async (req, reply) => {
         const start = Date.now();
 
-        const games = await cacheExecute('cache_index', db
+        const games = await cacheExecute('caches', db
             .selectFrom('game')
             .select(['game.name', 'game.display_name'])
             .leftJoin(
@@ -32,7 +32,8 @@ export default async function (app: FastifyInstance) {
                 (join) => join.onRef('game.id', '=', 'cache.game_id')
             )
             .select(db.fn.count('cache.id').as('count'))
-            .groupBy('game.id').orderBy('name', 'asc'));
+            .groupBy('game.id').orderBy('name', 'asc')
+        );
 
         // (reverse) forced order:
         games.sort((a: any, b: any) => a.name === 'oldscape' ? -1 : 0);
@@ -55,15 +56,21 @@ export default async function (app: FastifyInstance) {
 
         const { gameName } = req.params;
 
-        const game = await cacheExecuteTakeFirstOrThrow(`cache_list_${gameName}`, db
+        if (gameName.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
             .selectFrom('game')
             .selectAll()
-            .where('name', '=', gameName));
+            .where('name', '=', gameName)
+        );
 
-        const caches = await cacheExecute(`cache_list_${gameName}_caches`, db
+        const caches = await cacheExecute(`caches_${gameName}`, db
             .selectFrom('cache')
             .selectAll()
-            .where('game_id', '=', game.id));
+            .where('game_id', '=', game.id)
+        );
 
         // sort build as a revision
         caches.sort((a: any, b: any) => a.build.indexOf('-') === -1 && b.build.indexOf('-') === -1 ? parseInt(a.build) - parseInt(b.build) : 0);
@@ -94,6 +101,7 @@ export default async function (app: FastifyInstance) {
         }
 
         const cache = await getCache(id);
+
         const clients = await db
             .selectFrom('cache_client')
             .leftJoin(
@@ -136,10 +144,6 @@ export default async function (app: FastifyInstance) {
             ]
         });
     });
-
-    // get by revision (easy shorthand, if possible)
-    // app.get('/:game/:build', async (req: any, reply) => {
-    // });
 
     // produce a zip of individual cache files for the user
     app.get('/:id/files.zip', async (req: any, reply) => {
@@ -365,6 +369,7 @@ export default async function (app: FastifyInstance) {
         }
     });
 
+    // produce individual cache files for the user (cache_versioned)
     app.get('/:id/get/:archive/:group', async (req: any, reply) => {
         const { id, archive, group } = req.params;
 
@@ -461,5 +466,53 @@ export default async function (app: FastifyInstance) {
                 .where('cache_id', '=', cache.id)
                 .execute();
         }
+    });
+
+    // get by build (first match)
+
+    app.get('/:gameName/:build', async (req: any, reply) => {
+        const { gameName, build } = req.params;
+
+        if (gameName.length === 0 || build.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const cache = await cacheExecuteTakeFirstOrThrow(`cache_${gameName}_${build}`, db
+            .selectFrom('cache')
+            .select('id')
+            .where('game_id', '=', game.id)
+            .where('build', '=', build)
+        );
+
+        return reply.redirect(`/caches/${cache.id}`, 302);
+    });
+
+    app.get('/:gameName/:build/cache.zip', async (req: any, reply) => {
+        const { gameName, build } = req.params;
+
+        if (gameName.length === 0 || build.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const cache = await cacheExecuteTakeFirstOrThrow(`cache_${gameName}_${build}`, db
+            .selectFrom('cache')
+            .select('id')
+            .where('game_id', '=', game.id)
+            .where('build', '=', build)
+        );
+
+        return reply.redirect(`/caches/${cache.id}/cache.zip`, 302);
     });
 }
