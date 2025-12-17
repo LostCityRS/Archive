@@ -134,7 +134,7 @@ export default async function (app: FastifyInstance) {
             title: `${cache.display_name} ${cache.build} Cache`,
             breadcrumbs: [
                 { label: 'Caches', href: '/' },
-                { label: `${cache.display_name} Caches`, href: `/list/${cache.name}` }
+                { label: `${cache.display_name} Caches`, href: `/caches/list/${cache.name}` }
             ]
         });
     });
