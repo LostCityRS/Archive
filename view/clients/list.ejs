@@ -41,9 +41,7 @@
 									</td>
 									<td>
 										<% if (client.timestamp) { %>
-										<a class="hover:text-gray-300" href="/clients/<%= client.id %>">
 											<%= client.timestamp.toISOString().split('T')[0] %>
-										</a>
 										<% } else { %>
 										-
 										<% } %>

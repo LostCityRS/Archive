@@ -71,7 +71,7 @@
 							Related Files<br>
 
 							<% for (const client of clients) { %>
-							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>" title="<%= client.name %>">
+							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>/download" title="<%= client.name %>">
 								<%= client.name %>: <%= client.len %> bytes
 							</a>
 							<br>
