@@ -239,30 +239,26 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        reply.hijack();
-        reply.raw.writeHead(200, {
-            'Content-Type': 'application/zip',
-            'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
-        });
+        reply.status(200);
+        reply.header('Content-Type', 'application/zip');
+        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
 
         let aborted = false;
         const out = new PassThrough({
-            highWaterMark: 16 * 1024
+            highWaterMark: 1 * 1024 * 1024
         });
         out.setMaxListeners(0);
-        const zip = new Zip(async (err, chunk, final) => {
+        const zip = new Zip((err, chunk, final) => {
             if (aborted) return;
             if (err) return out.destroy(err);
 
-            if (!out.write(chunk)) {
-                await once(out, 'drain');
-            }
+            out.write(chunk);
 
             if (final) {
                 out.end();
             }
         });
-        const pipe = pipeline(out, reply.raw).catch(() => { });
+        reply.send(out);
 
         req.raw.on('close', () => {
             if (req.raw.aborted) {
@@ -416,7 +412,6 @@ export default async function (app: FastifyInstance) {
         if (aborted) return;
 
         zip.end();
-        await pipe;
     });
 
     // produce individual cache files for the user (cache_versioned)
