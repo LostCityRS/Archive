@@ -30,42 +30,49 @@ export const db = new Kysely<DB>({
 });
 
 const lru = new LRUCache({ max: 50, ttl: 300_000 });
+const useCache = process.env.DB_CACHE === 'true';
 
 // todo: is it possible to preserve query builder type info?
 export async function cacheExecute(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
-    let data = lru.get(key);
-    if (data) {
-        return data;
+    if (useCache) {
+        const data = lru.get(key);
+        if (data) {
+            return data;
+        }
     }
 
     // console.time(key);
-    data = query.execute();
+    const data = query.execute();
     // console.timeEnd(key);
     lru.set(key, data);
     return data;
 }
 
 export async function cacheExecuteTakeFirst(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
-    let data = lru.get(key);
-    if (data) {
-        return data;
+    if (useCache) {
+        const data = lru.get(key);
+        if (data) {
+            return data;
+        }
     }
 
     // console.time(key);
-    data = query.executeTakeFirst();
+    const data = query.executeTakeFirst();
     // console.timeEnd(key);
     lru.set(key, data);
     return data;
 }
 
 export async function cacheExecuteTakeFirstOrThrow(key: string, query: SelectQueryBuilder<any, any, any>): Promise<any> {
-    let data = lru.get(key);
-    if (data) {
-        return data;
+    if (useCache) {
+        const data = lru.get(key);
+        if (data) {
+            return data;
+        }
     }
 
     // console.time(key);
-    data = query.executeTakeFirstOrThrow();
+    const data = query.executeTakeFirstOrThrow();
     // console.timeEnd(key);
     lru.set(key, data);
     return data;

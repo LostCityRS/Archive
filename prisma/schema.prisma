@@ -61,9 +61,9 @@ model cache {
     versioned Boolean
 
     // recalculated after imports
-    missing Int @default(0)
-    total   Int @default(0)
-    len     Int @default(0)
+    missing Int    @default(0) @db.UnsignedInt
+    total   Int    @default(0) @db.UnsignedInt
+    len     BigInt @default(0) @db.UnsignedBigInt
 
     @@index([game_id])
     @@index([game_id, build])

@@ -93,7 +93,7 @@ export async function importJs5(source: string, gameName: string, build: string)
 
     let cache;
     for (const test of all) {
-        const jags = await db
+        const index = await db
             .selectFrom('cache_versioned')
             .selectAll()
             .where('cache_id', '=', test.id)
@@ -101,8 +101,8 @@ export async function importJs5(source: string, gameName: string, build: string)
             .execute();
 
         let matches = true;
-        for (const jag of jags) {
-            if (archiveCrcs[jag.group] !== jag.crc) {
+        for (const js5 of index) {
+            if (archiveCrcs[js5.group] !== js5.crc) {
                 matches = false;
                 break;
             }
