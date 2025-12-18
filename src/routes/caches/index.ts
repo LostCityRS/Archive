@@ -1,10 +1,7 @@
-import { once } from 'events';
-import { PassThrough } from 'stream';
 import { pipeline } from 'stream/promises';
 
+import { makeZip } from 'client-zip';
 import { FastifyInstance } from 'fastify';
-import { Zip, ZipPassThrough } from 'fflate';
-import { createTarPacker } from 'modern-tar';
 
 import { db, cacheExecute, cacheExecuteTakeFirst, cacheExecuteTakeFirstOrThrow } from '#/db/query.js';
 
@@ -23,6 +20,115 @@ async function getCache(id: number) {
         .select(['cache.id', 'game.name', 'game.display_name'])
         .where('cache.id', '=', id)
     );
+}
+
+// async function getVersionedMetaData(cacheId: number, gameId: number) {
+//     const cacheData = db
+//         .selectFrom('cache_versioned_stats')
+//         .selectAll()
+//         .where('cache_id', '=', cacheId)
+//         .orderBy('cache_versioned_stats.archive', 'asc')
+//         .stream();
+
+//     const meta = [];
+//     for await (const data of cacheData) {
+//         await new Promise(setImmediate);
+
+//         meta.push({
+//             name: `${data.archive}/${data.group}.dat`,
+//             size: data.len
+//         });
+//     }
+//     return meta;
+// }
+
+async function* getVersionedData(cacheId: number, gameId: number) {
+    const cacheData = db
+        .selectFrom('cache_versioned')
+        .leftJoin(
+            'data_versioned',
+            (join) => join
+                .on('data_versioned.game_id', '=', gameId)
+                .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+                .onRef('data_versioned.group', '=', 'cache_versioned.group')
+                .onRef('data_versioned.version', '=', 'cache_versioned.version')
+                .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
+        )
+        .where('cache_id', '=', cacheId)
+        .select(['cache_versioned.archive', 'cache_versioned.group', 'cache_versioned.version', 'data_versioned.bytes'])
+        .orderBy('cache_versioned.archive', 'asc')
+        .stream();
+
+    for await (const data of cacheData) {
+        if (!data.bytes?.length) continue;
+
+        await new Promise(setImmediate);
+
+        yield {
+            archive: data.archive,
+            group: data.group,
+            version: data.version,
+            bytes: data.bytes
+        }
+    }
+}
+
+async function* getVersionedDataZip(cacheId: number, gameId: number) {
+    for await (const data of getVersionedData(cacheId, gameId)) {
+        yield {
+            name: `${data.archive}/${data.group}.dat`,
+            size: data.bytes.length,
+            input: new Uint8Array(data.bytes)
+        };
+    }
+}
+
+// async function getRawMetaData(cacheId: number, gameId: number) {
+//     const cacheData = db
+//         .selectFrom('cache_raw_stats')
+//         .selectAll()
+//         .where('cache_id', '=', cacheId)
+//         .orderBy('cache_raw_stats.name', 'asc')
+//         .stream();
+
+//     const meta = [];
+//     for await (const data of cacheData) {
+//         await new Promise(setImmediate);
+
+//         meta.push({
+//             name: data.name,
+//             size: data.len
+//         });
+//     }
+//     return meta;
+// }
+
+async function* getRawDataZip(cacheId: number, gameId: number) {
+    const cacheData = db
+        .selectFrom('cache_raw')
+        .leftJoin(
+            'data_raw',
+            (join) => join
+                .on('data_raw.game_id', '=', gameId)
+                .onRef('data_raw.name', '=', 'cache_raw.name')
+                .onRef('data_raw.crc', '=', 'cache_raw.crc')
+        )
+        .where('cache_id', '=', cacheId)
+        .select(['cache_raw.name', 'data_raw.bytes'])
+        .orderBy('cache_raw.name', 'asc')
+        .stream();
+
+    for await (const data of cacheData) {
+        if (!data.bytes?.length) continue;
+
+        await new Promise(setImmediate);
+
+        yield {
+            name: data.name,
+            size: data.bytes.length,
+            input: new Uint8Array(data.bytes)
+        };
+    }
 }
 
 export default async function (app: FastifyInstance) {
@@ -150,9 +256,8 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    // todo: compression would be nice...
-    // produce a tarball of individual cache files for the user
-    app.get('/:id/files.tar', async (req: any, reply) => {
+    // produce a zip of individual cache files for the user
+    app.get('/:id/files.zip', async (req: any, reply) => {
         const { id } = req.params;
 
         if (id.length === 0) {
@@ -161,75 +266,40 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        if (!cache.versioned) {
-            return reply.redirect(`/caches/${cache.id}/cache.zip`, 302);
-        }
-
-        reply.hijack();
-        reply.raw.writeHead(200, {
-            'Content-Type': 'application/x-tar',
-            'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.tar"`,
-        });
-
-        let aborted = false;
-        const { readable, controller } = createTarPacker();
-        const out = new PassThrough({
-            highWaterMark: 16 * 1024
-        });
-        out.setMaxListeners(0);
-        // const compressedStream = readable.pipeThrough(createGzipEncoder()); // ballons memory :(
-        const pipe = pipeline(readable, out, reply.raw).catch(() => { });
-
+        const controller = new AbortController();
         req.raw.on('close', () => {
             if (req.raw.aborted) {
-                aborted = true;
-                out.destroy();
+                controller.abort();
             }
         });
 
-        try {
-            const cacheData = db
-                .selectFrom('cache_versioned')
-                .leftJoin(
-                    'data_versioned',
-                    (join) => join
-                        .on('data_versioned.game_id', '=', cache.game_id)
-                        .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
-                        .onRef('data_versioned.group', '=', 'cache_versioned.group')
-                        .onRef('data_versioned.version', '=', 'cache_versioned.version')
-                        .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
-                )
-                .where('cache_id', '=', cache.id)
-                .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
-                .stream();
+        reply.hijack();
 
-            for await (const data of cacheData) {
-                if (aborted) return;
-                if (!data.bytes?.length) continue;
+        if (cache.versioned) {
+            reply.raw.writeHead(200, {
+                'content-type': 'application/zip',
+                'content-disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+                // adds extra time but may be worth it for the user to see a download estimate
+                // 'content-length': predictLength(await getVersionedMetaData(cache.id, cache.game_id)).toString()
+            });
 
-                const fileStream = controller.add({
-                    name: `${data.archive}/${data.group}.dat`,
-                    size: data.bytes.length,
-                    type: 'file'
-                });
+            const zip = makeZip(getVersionedDataZip(cache.id, cache.game_id));
+            pipeline(zip, reply.raw, { signal: controller.signal }).catch(() => {});
+        } else {
+            reply.raw.writeHead(200, {
+                'content-type': 'application/zip',
+                'content-disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+                // adds extra time but may be worth it for the user to see a download estimate
+                // 'content-length': predictLength(await getRawMetaData(cache.id, cache.game_id)).toString()
+            });
 
-                const writer = fileStream.getWriter();
-                await writer.write(data.bytes);
-                await writer.close();
-
-                await new Promise(setImmediate);
-            }
-        } catch (err) {
-            console.error(err);
+            const zip = makeZip(getRawDataZip(cache.id, cache.game_id));
+            pipeline(zip, reply.raw, { signal: controller.signal }).catch(() => {});
         }
-
-        controller.finalize();
-        await pipe;
     });
 
     // produce a cache in the client format and zip it for the user
     // todo: expose control over packing music to fit large rs3 caches?
-    // todo: possible to reduce memory usage further?
     app.get('/:id/cache.zip', async (req: any, reply) => {
         const { id } = req.params;
 
@@ -239,179 +309,85 @@ export default async function (app: FastifyInstance) {
 
         const cache = await getCache(id);
 
-        reply.status(200);
-        reply.header('Content-Type', 'application/zip');
-        reply.header('Content-Disposition', `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`);
-
-        let aborted = false;
-        const out = new PassThrough({
-            highWaterMark: 1 * 1024 * 1024
-        });
-        out.setMaxListeners(0);
-        const zip = new Zip((err, chunk, final) => {
-            if (aborted) return;
-            if (err) return out.destroy(err);
-
-            out.write(chunk);
-
-            if (final) {
-                out.end();
-            }
-        });
-        reply.send(out);
-
-        req.raw.on('close', () => {
-            if (req.raw.aborted) {
-                aborted = true;
-                zip.terminate();
-                out.destroy();
-            }
-        });
-
-        try {
-            if (cache.versioned) {
-                const archive255 = await cacheExecute(`cache_${cache.id}_archives255`, db
-                    .selectFrom('cache_versioned')
-                    .select('group')
-                    .where('cache_id', '=', cache.id)
-                    .where('archive', '=', 255)
-                );
-
-                const { archives } = await cacheExecuteTakeFirstOrThrow(`cache_${cache.id}_archives`, db
-                    .selectFrom('cache_versioned')
-                    .select(db.fn.max('archive').as('archives'))
-                    .where('cache_id', '=', cache.id)
-                    .where('archive', '<', 255)
-                );
-
-                const cacheData = db
-                    .selectFrom('cache_versioned')
-                    .leftJoin(
-                        'data_versioned',
-                        (join) => join
-                            .on('data_versioned.game_id', '=', cache.game_id)
-                            .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
-                            .onRef('data_versioned.group', '=', 'cache_versioned.group')
-                            .onRef('data_versioned.version', '=', 'cache_versioned.version')
-                            .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_versioned.archive', 'cache_versioned.group', 'cache_versioned.version', 'data_versioned.bytes'])
-                    .stream();
-
-                if (!archive255.length && archives < 5) {
-                    const dat = new ZipPassThrough('main_file_cache.dat');
-                    zip.add(dat);
-
-                    const stream = new FileStreamAsync();
-                    stream.dat.on('data', chunk => {
-                        if (aborted) return;
-
-                        dat.push(Buffer.from(chunk));
-                    });
-                    stream.dat.on('end', () => {
-                        dat.push(new Uint8Array(0), true);
-                    });
-
-                    for await (const data of cacheData) {
-                        if (aborted) return;
-                        if (!data.bytes?.length) continue;
-
-                        await stream.write(data.archive, data.group, data.bytes, data.version);
-
-                        await new Promise(setImmediate);
-                    }
-                    stream.end();
-
-                    for (let i = 0; i < 5; i++) {
-                        if (aborted) return;
-
-                        const idx = new ZipPassThrough(`main_file_cache.idx${i}`,);
-                        zip.add(idx);
-
-                        await new Promise(setImmediate);
-
-                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
-                    }
-                } else {
-                    const dat = new ZipPassThrough('main_file_cache.dat2');
-                    zip.add(dat);
-
-                    const stream = new Js5LocalDiskCacheAsync(archives + 1);
-                    stream.dat.on('data', chunk => {
-                        if (aborted) return;
-
-                        dat.push(Buffer.from(chunk));
-                    });
-                    stream.dat.on('end', () => {
-                        if (aborted) return;
-
-                        dat.push(new Uint8Array(0), true);
-                    });
-
-                    for await (const data of cacheData) {
-                        if (aborted) return;
-                        if (!data.bytes?.length) continue;
-
-                        await stream.write(data.archive, data.group, data.bytes, data.version);
-
-                        await new Promise(setImmediate);
-                    }
-                    stream.end();
-
-                    for (let i = 0; i <= archives; i++) {
-                        if (aborted) return;
-
-                        const idx = new ZipPassThrough(`main_file_cache.idx${i}`);
-                        zip.add(idx);
-
-                        await new Promise(setImmediate);
-
-                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
-                    }
-
-                    if (!aborted) {
-                        const idx = new ZipPassThrough('main_file_cache.idx255');
-                        zip.add(idx);
-
-                        await new Promise(setImmediate);
-
-                        idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
-                    }
-                }
-            } else {
-                const cacheData = db
-                    .selectFrom('cache_raw')
-                    .leftJoin(
-                        'data_raw',
-                        (join) => join
-                            .on('data_raw.game_id', '=', cache.game_id)
-                            .onRef('data_raw.name', '=', 'cache_raw.name')
-                            .onRef('data_raw.crc', '=', 'cache_raw.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_raw.name', 'data_raw.bytes'])
-                    .stream();
-
-                for await (const data of cacheData) {
-                    if (aborted) return;
-                    if (!data.bytes?.length) continue;
-
-                    const entry = new ZipPassThrough(data.name);
-                    zip.add(entry);
-
-                    await new Promise(setImmediate);
-
-                    entry.push(data.bytes, true);
-                }
-            }
-        } catch (err) {
-            console.error(err);
+        if (!cache.versioned) {
+            return reply.redirect(`/caches/${cache.id}/files.zip`, 302);
         }
 
-        if (aborted) return;
+        reply.hijack();
+        reply.raw.writeHead(200, {
+            'content-type': 'application/zip',
+            'content-disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+            // todo: precalculate size
+        });
 
-        zip.end();
+        const controller = new AbortController();
+        req.raw.on('close', () => {
+            if (req.raw.aborted) {
+                controller.abort();
+            }
+        });
+
+        const archive255 = await cacheExecute(`cache_${cache.id}_archives255`, db
+            .selectFrom('cache_versioned')
+            .select('group')
+            .where('cache_id', '=', cache.id)
+            .where('archive', '=', 255)
+        );
+
+        const { archives } = await cacheExecuteTakeFirstOrThrow(`cache_${cache.id}_archives`, db
+            .selectFrom('cache_versioned')
+            .select(db.fn.max('archive').as('archives'))
+            .where('cache_id', '=', cache.id)
+            .where('archive', '<', 255)
+        );
+
+        if (!archive255.length && archives < 5) {
+            const stream = new FileStreamAsync();
+
+            const files = [{
+                name: 'main_file_cache.dat',
+                input: stream.dat
+            }];
+
+            for (let i = 0; i < 5; i++) {
+                files.push({
+                    name: `main_file_cache.idx${i}`,
+                    input: stream.idx[i]
+                });
+            }
+
+            const zip = makeZip(files);
+            pipeline(zip, reply.raw, { signal: controller.signal }).catch(() => {});
+
+            for await (const data of getVersionedData(cache.id, cache.game_id)) {
+                await stream.write(data.archive, data.group, data.bytes, data.version);
+            }
+            stream.end();
+        } else {
+            const stream = new Js5LocalDiskCacheAsync(archives + 1);
+
+            const files = [{
+                name: 'main_file_cache.dat2',
+                input: stream.dat
+            }];
+
+            for (let i = 0; i < stream.idx.length; i++) {
+                if (!stream.idx[i]) continue;
+
+                files.push({
+                    name: `main_file_cache.idx${i}`,
+                    input: stream.idx[i]
+                });
+            }
+
+            const zip = makeZip(files);
+            pipeline(zip, reply.raw, { signal: controller.signal }).catch(() => {});
+
+            for await (const data of getVersionedData(cache.id, cache.game_id)) {
+                await stream.write(data.archive, data.group, data.bytes, data.version);
+            }
+            stream.end();
+        }
     });
 
     // produce individual cache files for the user (cache_versioned)

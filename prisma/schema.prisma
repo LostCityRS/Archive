@@ -104,6 +104,27 @@ model cache_raw {
     @@index([cache_id])
 }
 
+// precalculated lengths for UX purposes
+// model cache_versioned_stats {
+//     cache_id Int
+//     archive  Int @db.UnsignedTinyInt
+//     group    Int @db.UnsignedInt
+//     len      Int @db.UnsignedInt
+
+//     @@id([cache_id, archive, group, len])
+//     @@index([cache_id])
+// }
+
+// precalculated lengths for UX purposes
+// model cache_raw_stats {
+//     cache_id Int
+//     name     String
+//     len      Int @db.UnsignedInt
+
+//     @@id([cache_id, name, len])
+//     @@index([cache_id])
+// }
+
 // ----
 
 model client {

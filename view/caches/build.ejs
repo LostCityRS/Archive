@@ -79,6 +79,27 @@
 								</span>
 							</div>
 
+							<% if (cache.versioned) { %>
+							<div class="flex flex-col gap-3">
+								<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Flat Files</h2>
+
+								<%- include('_partial/file_download', {
+									icon: 'file-archive',
+									name: `files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
+									href: `/caches/${cache.id}/files.zip`,
+									size: 'lg'
+									}) 
+								%>
+
+								<span class="text-siam-200">
+									<i data-lucide="info"
+										 class="size-4 inline-block align-sub"></i>
+
+									This is a zip export with individual files inside.
+								</span>
+							</div>
+							<% } %>
+
 							<% if (!cache.versioned) { %>
 							<div class="flex flex-col gap-3">
 								<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>

@@ -5,23 +5,33 @@ import Packet from '#/io/Packet.js';
 
 export default class FileStreamAsync {
     dat: PassThrough;
-    idx: Packet[] = [];
-    lastChunk: number = 0;
+    lastBlock: number = 0;
+
+    idx: PassThrough[] = [];
+    idxBuf: Packet[] = [];
 
     constructor() {
         this.dat = new PassThrough({
             highWaterMark: 4 * 520
         });
         this.dat.setMaxListeners(0);
-        this.dat.write(new Uint8Array(520)); // first chunk is always empty
+
+        this.dat.write(new Uint8Array(520)); // first block is always empty
 
         for (let i = 0; i < 5; ++i) {
-            this.idx[i] = Packet.alloc(65536 * 6);
+            this.idx[i] = new PassThrough();
+            this.idxBuf[i] = Packet.alloc(65536 * 6);
         }
     }
 
     end() {
         this.dat.end();
+
+        for (let i = 0; i < 5; ++i) {
+            // todo: assumes the last write was the last file
+            this.idx[i].write(this.idxBuf[i].data.subarray(0, this.idxBuf[i].pos));
+            this.idx[i].end();
+        }
     }
 
     async write(archive: number, file: number, src: Uint8Array, version: number) {
@@ -36,9 +46,9 @@ export default class FileStreamAsync {
             src = tmp;
         }
 
-        this.idx[archive].pos = file * 6;
-        this.idx[archive].p3(src.length);
-        this.idx[archive].p3(++this.lastChunk);
+        this.idxBuf[archive].pos = file * 6;
+        this.idxBuf[archive].p3(src.length);
+        this.idxBuf[archive].p3(++this.lastBlock);
 
         const chunk = new Packet(new Uint8Array(520));
 
@@ -54,7 +64,7 @@ export default class FileStreamAsync {
             chunk.p2(file);
             chunk.p2(part++);
             if (buf.available > available) {
-                chunk.p3(++this.lastChunk);
+                chunk.p3(++this.lastBlock);
             } else {
                 chunk.p3(0);
             }

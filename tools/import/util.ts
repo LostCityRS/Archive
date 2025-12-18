@@ -408,8 +408,11 @@ export async function recalculateStats(cacheId: number) {
                     .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
             )
             .select(['data_versioned.len'])
+            // .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.len'])
             .where('cache_id', '=', cache.id)
             .execute();
+
+        // await db.deleteFrom('cache_versioned_stats').where('cache_id', '=', cache.id).execute();
 
         let missing = 0;
         let total = 0;
@@ -417,6 +420,16 @@ export async function recalculateStats(cacheId: number) {
         for (const data of cacheData) {
             if (data.len !== null) {
                 len += data.len;
+
+                // await db
+                //     .insertInto('cache_versioned_stats')
+                //     .values({
+                //         cache_id: cache.id,
+                //         archive: data.archive,
+                //         group: data.group,
+                //         len: data.len
+                //     })
+                //     .execute();
             } else {
                 missing++;
             }
@@ -444,8 +457,11 @@ export async function recalculateStats(cacheId: number) {
                     .onRef('data_raw.crc', '=', 'cache_raw.crc')
             )
             .select(['data_raw.len'])
+            // .select(['cache_raw.name', 'data_raw.len'])
             .where('cache_id', '=', cache.id)
             .execute();
+
+        // await db.deleteFrom('cache_raw_stats').where('cache_id', '=', cache.id).execute();
 
         let missing = 0;
         let total = 0;
@@ -453,6 +469,15 @@ export async function recalculateStats(cacheId: number) {
         for (const data of cacheData) {
             if (data.len !== null) {
                 len += data.len;
+
+                // await db
+                //     .insertInto('cache_raw_stats')
+                //     .values({
+                //         cache_id: cache.id,
+                //         name: data.name,
+                //         len: data.len
+                //     })
+                //     .execute();
             } else {
                 missing++;
             }
