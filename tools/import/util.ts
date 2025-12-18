@@ -100,14 +100,13 @@ export async function importJs5(source: string, gameName: string, build: string)
             .where('archive', '=', 255)
             .execute();
 
-        let matches = true;
+        let matches = 0;
         for (const js5 of index) {
-            if (archiveCrcs[js5.group] !== js5.crc) {
-                matches = false;
-                break;
+            if (archiveCrcs[js5.group] === js5.crc) {
+                matches++;
             }
         }
-        if (matches) {
+        if (matches === archives) {
             cache = test;
             break;
         }
@@ -270,14 +269,13 @@ export async function importOnDemand(source: string, gameName: string, build: st
                 .where('archive', '=', 0)
                 .execute();
 
-            let matches = true;
+            let matches = 0;
             for (const jag of jags) {
-                if (jagCrcs[jag.group] !== jag.crc) {
-                    matches = false;
-                    break;
+                if (jagCrcs[jag.group] === jag.crc) {
+                    matches++;
                 }
             }
-            if (matches) {
+            if (matches === 8) {
                 cache = test;
                 break;
             }
