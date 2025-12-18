@@ -1,5 +1,10 @@
+import { once } from 'events';
+import { PassThrough } from 'stream';
+import { pipeline } from 'stream/promises';
+
 import { FastifyInstance } from 'fastify';
-import { Zip, ZipDeflate } from 'fflate';
+import { Zip, ZipPassThrough } from 'fflate';
+import { createTarPacker } from 'modern-tar';
 
 import { db, cacheExecute, cacheExecuteTakeFirst, cacheExecuteTakeFirstOrThrow } from '#/db/query.js';
 
@@ -145,124 +150,133 @@ export default async function (app: FastifyInstance) {
         });
     });
 
-    // todo: memory usage is ballooning
-    // produce a zip of individual cache files for the user
-    // app.get('/:id/files.zip', async (req: any, reply) => {
-    //     try {
-    //         const { id } = req.params;
+    // todo: compression would be nice...
+    // produce a tarball of individual cache files for the user
+    app.get('/:id/files.tar', async (req: any, reply) => {
+        const { id } = req.params;
 
-    //         if (id.length === 0) {
-    //             return reply.redirect('/', 302);
-    //         }
+        if (id.length === 0) {
+            return reply.redirect('/', 302);
+        }
 
-    //         const cache = await getCache(id);
+        const cache = await getCache(id);
 
-    //         reply.hijack();
-    //         reply.raw.writeHead(200, {
-    //             'Content-Type': 'application/zip',
-    //             'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
-    //         });
+        if (!cache.versioned) {
+            return reply.redirect(`/caches/${cache.id}/cache.zip`, 302);
+        }
 
-    //         const zip = new Zip((err, chunk, final) => {
-    //             if (err) {
-    //                 reply.raw.end();
-    //                 return;
-    //             }
+        reply.hijack();
+        reply.raw.writeHead(200, {
+            'Content-Type': 'application/x-tar',
+            'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.tar"`,
+        });
 
-    //             reply.raw.write(Buffer.from(chunk));
+        let aborted = false;
+        const { readable, controller } = createTarPacker();
+        const out = new PassThrough({
+            highWaterMark: 16 * 1024
+        });
+        out.setMaxListeners(0);
+        // const compressedStream = readable.pipeThrough(createGzipEncoder()); // ballons memory :(
+        const pipe = pipeline(readable, out, reply.raw).catch(() => { });
 
-    //             if (final) {
-    //                 reply.raw.end();
-    //             }
-    //         });
+        req.raw.on('close', () => {
+            aborted = true;
+            out.destroy();
+        });
 
-    //         if (cache.versioned) {
-    //             const cacheData = db
-    //                 .selectFrom('cache_versioned')
-    //                 .leftJoin(
-    //                     'data_versioned',
-    //                     (join) => join
-    //                         .on('data_versioned.game_id', '=', cache.game_id)
-    //                         .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
-    //                         .onRef('data_versioned.group', '=', 'cache_versioned.group')
-    //                         .onRef('data_versioned.version', '=', 'cache_versioned.version')
-    //                         .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
-    //                 )
-    //                 .where('cache_id', '=', cache.id)
-    //                 .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
-    //                 .stream();
+        try {
+            const cacheData = db
+                .selectFrom('cache_versioned')
+                .leftJoin(
+                    'data_versioned',
+                    (join) => join
+                        .on('data_versioned.game_id', '=', cache.game_id)
+                        .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+                        .onRef('data_versioned.group', '=', 'cache_versioned.group')
+                        .onRef('data_versioned.version', '=', 'cache_versioned.version')
+                        .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
+                )
+                .where('cache_id', '=', cache.id)
+                .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
+                .stream();
 
-    //             for await (const data of cacheData) {
-    //                 if (data.bytes && data.bytes.length) {
-    //                     const entry = new ZipDeflate(`${data.archive}/${data.group}.dat`, { level: 0 });
-    //                     zip.add(entry);
-    //                     entry.push(data.bytes, true);
-    //                 }
-    //             }
-    //         } else {
-    //             const cacheData = db
-    //                 .selectFrom('cache_raw')
-    //                 .leftJoin(
-    //                     'data_raw',
-    //                     (join) => join
-    //                         .on('data_raw.game_id', '=', cache.game_id)
-    //                         .onRef('data_raw.name', '=', 'cache_raw.name')
-    //                         .onRef('data_raw.crc', '=', 'cache_raw.crc')
-    //                 )
-    //                 .where('cache_id', '=', cache.id)
-    //                 .select(['cache_raw.name', 'data_raw.bytes'])
-    //                 .stream();
+            for await (const data of cacheData) {
+                if (aborted) return;
+                if (!data.bytes?.length) continue;
 
-    //             for await (const data of cacheData) {
-    //                 if (data.bytes && data.bytes.length) {
-    //                     const entry = new ZipDeflate(data.name, { level: 0 });
-    //                     zip.add(entry);
-    //                     entry.push(data.bytes, true);
-    //                 }
-    //             }
-    //         }
+                const fileStream = controller.add({
+                    name: `${data.archive}/${data.group}.dat`,
+                    size: data.bytes.length,
+                    type: 'file'
+                });
 
-    //         zip.end();
-    //     } catch (err) {
-    //         reply.raw.end();
-    //         console.error(err);
-    //     }
-    // });
+                const writer = fileStream.getWriter();
+                await writer.write(data.bytes);
+                await writer.close();
+
+                await new Promise(setImmediate);
+            }
+        } catch (err) {
+            console.error(err);
+        }
+
+        controller.finalize();
+        await pipe;
+    });
 
     // produce a cache in the client format and zip it for the user
+    // todo: expose control over packing music to fit large rs3 caches?
+    // todo: possible to reduce memory usage further?
     app.get('/:id/cache.zip', async (req: any, reply) => {
-        try {
-            // todo: expose control over packing music to fit large rs3 caches?
-            // todo: offer jcache too?
+        const { id } = req.params;
 
-            const { id } = req.params;
+        if (id.length === 0) {
+            return reply.redirect('/', 302);
+        }
 
-            if (id.length === 0) {
-                return reply.redirect('/', 302);
+        const cache = await getCache(id);
+
+        reply.hijack();
+        reply.raw.writeHead(200, {
+            'Content-Type': 'application/zip',
+            'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+        });
+
+        let aborted = false;
+        const out = new PassThrough({
+            highWaterMark: 16 * 1024
+        });
+        out.setMaxListeners(0);
+        const zip = new Zip(async (err, chunk, final) => {
+            if (aborted) return;
+            if (err) return out.destroy(err);
+
+            if (!out.write(chunk)) {
+                await once(out, 'drain');
             }
 
-            const cache = await getCache(id);
+            if (final) {
+                out.end();
+            }
+        });
+        const pipe = pipeline(out, reply.raw).catch(() => { });
 
-            reply.hijack();
-            reply.raw.writeHead(200, {
-                'Content-Type': 'application/zip',
-                'Content-Disposition': `attachment; filename="cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
-            });
+        req.raw.on('close', () => {
+            aborted = true;
+            zip.terminate();
+            out.destroy();
+        });
 
-            const zip = new Zip((err, chunk, final) => {
-                if (err) {
-                    reply.raw.end();
-                    return;
-                }
-
-                reply.raw.write(Buffer.from(chunk));
-
-                if (final) {
-                    reply.raw.end();
-                }
-            });
-
+        try {
             if (cache.versioned) {
+                const archive255 = await cacheExecute(`cache_${cache.id}_archives255`, db
+                    .selectFrom('cache_versioned')
+                    .select('group')
+                    .where('cache_id', '=', cache.id)
+                    .where('archive', '=', 255)
+                );
+
                 const { archives } = await cacheExecuteTakeFirstOrThrow(`cache_${cache.id}_archives`, db
                     .selectFrom('cache_versioned')
                     .select(db.fn.max('archive').as('archives'))
@@ -285,42 +299,14 @@ export default async function (app: FastifyInstance) {
                     .select(['cache_versioned.archive', 'cache_versioned.group', 'cache_versioned.version', 'data_versioned.bytes'])
                     .stream();
 
-                if (archives !== 4) {
-                    const dat = new ZipDeflate('main_file_cache.dat2', { level: 1 });
-                    zip.add(dat);
-
-                    const stream = new Js5LocalDiskCacheAsync(archives + 1);
-                    stream.dat.on('data', chunk => {
-                        dat.push(Buffer.from(chunk));
-                    });
-                    stream.dat.on('end', () => {
-                        dat.push(new Uint8Array(0), true);
-                    });
-
-                    for await (const data of cacheData) {
-                        if (data.bytes && data.bytes.length) {
-                            stream.write(data.archive, data.group, data.bytes, data.version);
-                        }
-                    }
-                    stream.dat.end();
-
-                    for (let i = 0; i <= archives; i++) {
-                        const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
-                        zip.add(idx);
-                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
-                    }
-
-                    {
-                        const idx = new ZipDeflate('main_file_cache.idx255', { level: 1 });
-                        zip.add(idx);
-                        idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
-                    }
-                } else {
-                    const dat = new ZipDeflate('main_file_cache.dat', { level: 1 });
+                if (!archive255.length && archives < 5) {
+                    const dat = new ZipPassThrough('main_file_cache.dat');
                     zip.add(dat);
 
                     const stream = new FileStreamAsync();
                     stream.dat.on('data', chunk => {
+                        if (aborted) return;
+
                         dat.push(Buffer.from(chunk));
                     });
                     stream.dat.on('end', () => {
@@ -328,16 +314,69 @@ export default async function (app: FastifyInstance) {
                     });
 
                     for await (const data of cacheData) {
-                        if (data.bytes && data.bytes.length) {
-                            stream.write(data.archive, data.group, data.bytes, data.version);
-                        }
+                        if (aborted) return;
+                        if (!data.bytes?.length) continue;
+
+                        await stream.write(data.archive, data.group, data.bytes, data.version);
+
+                        await new Promise(setImmediate);
                     }
-                    stream.dat.end();
+                    stream.end();
 
                     for (let i = 0; i < 5; i++) {
-                        const idx = new ZipDeflate(`main_file_cache.idx${i}`, { level: 1 });
+                        if (aborted) return;
+
+                        const idx = new ZipPassThrough(`main_file_cache.idx${i}`,);
                         zip.add(idx);
+
+                        await new Promise(setImmediate);
+
                         idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                    }
+                } else {
+                    const dat = new ZipPassThrough('main_file_cache.dat2');
+                    zip.add(dat);
+
+                    const stream = new Js5LocalDiskCacheAsync(archives + 1);
+                    stream.dat.on('data', chunk => {
+                        if (aborted) return;
+
+                        dat.push(Buffer.from(chunk));
+                    });
+                    stream.dat.on('end', () => {
+                        if (aborted) return;
+
+                        dat.push(new Uint8Array(0), true);
+                    });
+
+                    for await (const data of cacheData) {
+                        if (aborted) return;
+                        if (!data.bytes?.length) continue;
+
+                        await stream.write(data.archive, data.group, data.bytes, data.version);
+
+                        await new Promise(setImmediate);
+                    }
+                    stream.end();
+
+                    for (let i = 0; i <= archives; i++) {
+                        if (aborted) return;
+
+                        const idx = new ZipPassThrough(`main_file_cache.idx${i}`);
+                        zip.add(idx);
+
+                        await new Promise(setImmediate);
+
+                        idx.push(stream.idx[i].data.subarray(0, stream.idx[i].pos), true);
+                    }
+
+                    if (!aborted) {
+                        const idx = new ZipPassThrough('main_file_cache.idx255');
+                        zip.add(idx);
+
+                        await new Promise(setImmediate);
+
+                        idx.push(stream.idx[255].data.subarray(0, stream.idx[255].pos), true);
                     }
                 }
             } else {
@@ -355,19 +394,25 @@ export default async function (app: FastifyInstance) {
                     .stream();
 
                 for await (const data of cacheData) {
-                    if (data.bytes && data.bytes.length) {
-                        const entry = new ZipDeflate(data.name, { level: 0 });
-                        zip.add(entry);
-                        entry.push(data.bytes, true);
-                    }
+                    if (aborted) return;
+                    if (!data.bytes?.length) continue;
+
+                    const entry = new ZipPassThrough(data.name);
+                    zip.add(entry);
+
+                    await new Promise(setImmediate);
+
+                    entry.push(data.bytes, true);
                 }
             }
-
-            zip.end();
         } catch (err) {
-            reply.raw.end();
             console.error(err);
         }
+
+        if (aborted) return;
+
+        zip.end();
+        await pipe;
     });
 
     // produce individual cache files for the user (cache_versioned)

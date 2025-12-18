@@ -1,3 +1,4 @@
+import { once } from 'events';
 import { PassThrough } from 'stream';
 
 import Packet from '#/io/Packet.js';
@@ -8,7 +9,10 @@ export default class Js5LocalDiskCacheAsync {
     lastChunk: number = 0;
 
     constructor(archives: number) {
-        this.dat = new PassThrough();
+        this.dat = new PassThrough({
+            highWaterMark: 4 * 520
+        });
+        this.dat.setMaxListeners(0);
         this.dat.write(new Uint8Array(520)); // first chunk is always empty
 
         this.idx[255] = Packet.alloc((archives + 1) * 6);
@@ -21,7 +25,7 @@ export default class Js5LocalDiskCacheAsync {
         this.dat.end();
     }
 
-    write(archive: number, group: number, src: Uint8Array, version: number) {
+    async write(archive: number, group: number, src: Uint8Array, version: number) {
         // append version trailer
         const tmp = new Uint8Array(src.length + 2);
         tmp.set(src, 0);
@@ -65,7 +69,9 @@ export default class Js5LocalDiskCacheAsync {
 
             buf.gdata(chunk.data, 8, available);
 
-            this.dat.write(chunk.data);
+            if (!this.dat.write(chunk.data)) {
+                await once(this.dat, 'drain');
+            }
         }
     }
 }

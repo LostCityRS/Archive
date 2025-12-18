@@ -41,3 +41,8 @@ await fastify.register(Autoload, {
 
 fastify.listen({ port: process.env.WEB_PORT ? parseInt(process.env.WEB_PORT) : 3000, host: '0.0.0.0' });
 console.log(`Running on http://localhost:${process.env.WEB_PORT ?? 3000}`);
+
+// setInterval(() => {
+//   const mem = process.memoryUsage();
+//   console.log(`Heap: ${(mem.heapUsed / 1024 / 1024).toFixed(2)} MB`);
+// }, 1000);

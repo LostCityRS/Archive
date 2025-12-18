@@ -7,3 +7,7 @@ Execute `bun run db:reset`
 Execute `bun run import:archive 377`
 
 Visit http://localhost:3000/caches
+
+## Dependencies
+
+[Bun 1.3.3](https://bun.sh) (or newer)

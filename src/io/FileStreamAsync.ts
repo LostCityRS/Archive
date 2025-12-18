@@ -1,3 +1,4 @@
+import { once } from 'events';
 import { PassThrough } from 'stream';
 
 import Packet from '#/io/Packet.js';
@@ -8,7 +9,10 @@ export default class FileStreamAsync {
     lastChunk: number = 0;
 
     constructor() {
-        this.dat = new PassThrough();
+        this.dat = new PassThrough({
+            highWaterMark: 4 * 520
+        });
+        this.dat.setMaxListeners(0);
         this.dat.write(new Uint8Array(520)); // first chunk is always empty
 
         for (let i = 0; i < 5; ++i) {
@@ -20,7 +24,7 @@ export default class FileStreamAsync {
         this.dat.end();
     }
 
-    write(archive: number, file: number, src: Uint8Array, version: number) {
+    async write(archive: number, file: number, src: Uint8Array, version: number) {
         if (archive !== 0) {
             version += 1; // because the import process subtracts 1 (correct to do)
 
@@ -58,7 +62,9 @@ export default class FileStreamAsync {
 
             buf.gdata(chunk.data, 8, available);
 
-            this.dat.write(chunk.data);
+            if (!this.dat.write(chunk.data)) {
+                await once(this.dat, 'drain');
+            }
         }
     }
 }
