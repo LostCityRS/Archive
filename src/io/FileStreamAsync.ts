@@ -41,20 +41,21 @@ export default class FileStreamAsync {
         const buf = new Packet(src);
         let part = 0;
         while (buf.available > 0) {
+            let available = buf.available;
+            if (available > 512) {
+                available = 512;
+            }
+
             chunk.pos = 0;
             chunk.p2(file);
             chunk.p2(part++);
-            if (buf.available > 512) {
+            if (buf.available > available) {
                 chunk.p3(++this.lastChunk);
             } else {
                 chunk.p3(0);
             }
             chunk.p1(archive + 1);
 
-            let available = buf.available;
-            if (available > 512) {
-                available = 512;
-            }
             buf.gdata(chunk.data, 8, available);
 
             this.dat.write(chunk.data);

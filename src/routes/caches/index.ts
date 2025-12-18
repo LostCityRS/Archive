@@ -145,88 +145,89 @@ export default async function (app: FastifyInstance) {
         });
     });
 
+    // todo: memory usage is ballooning
     // produce a zip of individual cache files for the user
-    app.get('/:id/files.zip', async (req: any, reply) => {
-        try {
-            const { id } = req.params;
+    // app.get('/:id/files.zip', async (req: any, reply) => {
+    //     try {
+    //         const { id } = req.params;
 
-            if (id.length === 0) {
-                return reply.redirect('/', 302);
-            }
+    //         if (id.length === 0) {
+    //             return reply.redirect('/', 302);
+    //         }
 
-            const cache = await getCache(id);
+    //         const cache = await getCache(id);
 
-            reply.hijack();
-            reply.raw.writeHead(200, {
-                'Content-Type': 'application/zip',
-                'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
-            });
+    //         reply.hijack();
+    //         reply.raw.writeHead(200, {
+    //             'Content-Type': 'application/zip',
+    //             'Content-Disposition': `attachment; filename="files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip"`,
+    //         });
 
-            const zip = new Zip((err, chunk, final) => {
-                if (err) {
-                    reply.raw.end();
-                    return;
-                }
+    //         const zip = new Zip((err, chunk, final) => {
+    //             if (err) {
+    //                 reply.raw.end();
+    //                 return;
+    //             }
 
-                reply.raw.write(Buffer.from(chunk));
+    //             reply.raw.write(Buffer.from(chunk));
 
-                if (final) {
-                    reply.raw.end();
-                }
-            });
+    //             if (final) {
+    //                 reply.raw.end();
+    //             }
+    //         });
 
-            if (cache.versioned) {
-                const cacheData = db
-                    .selectFrom('cache_versioned')
-                    .leftJoin(
-                        'data_versioned',
-                        (join) => join
-                            .on('data_versioned.game_id', '=', cache.game_id)
-                            .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
-                            .onRef('data_versioned.group', '=', 'cache_versioned.group')
-                            .onRef('data_versioned.version', '=', 'cache_versioned.version')
-                            .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
-                    .stream();
+    //         if (cache.versioned) {
+    //             const cacheData = db
+    //                 .selectFrom('cache_versioned')
+    //                 .leftJoin(
+    //                     'data_versioned',
+    //                     (join) => join
+    //                         .on('data_versioned.game_id', '=', cache.game_id)
+    //                         .onRef('data_versioned.archive', '=', 'cache_versioned.archive')
+    //                         .onRef('data_versioned.group', '=', 'cache_versioned.group')
+    //                         .onRef('data_versioned.version', '=', 'cache_versioned.version')
+    //                         .onRef('data_versioned.crc', '=', 'cache_versioned.crc')
+    //                 )
+    //                 .where('cache_id', '=', cache.id)
+    //                 .select(['cache_versioned.archive', 'cache_versioned.group', 'data_versioned.bytes'])
+    //                 .stream();
 
-                for await (const data of cacheData) {
-                    if (data.bytes && data.bytes.length) {
-                        const entry = new ZipDeflate(`${data.archive}/${data.group}.dat`, { level: 0 });
-                        zip.add(entry);
-                        entry.push(data.bytes, true);
-                    }
-                }
-            } else {
-                const cacheData = db
-                    .selectFrom('cache_raw')
-                    .leftJoin(
-                        'data_raw',
-                        (join) => join
-                            .on('data_raw.game_id', '=', cache.game_id)
-                            .onRef('data_raw.name', '=', 'cache_raw.name')
-                            .onRef('data_raw.crc', '=', 'cache_raw.crc')
-                    )
-                    .where('cache_id', '=', cache.id)
-                    .select(['cache_raw.name', 'data_raw.bytes'])
-                    .stream();
+    //             for await (const data of cacheData) {
+    //                 if (data.bytes && data.bytes.length) {
+    //                     const entry = new ZipDeflate(`${data.archive}/${data.group}.dat`, { level: 0 });
+    //                     zip.add(entry);
+    //                     entry.push(data.bytes, true);
+    //                 }
+    //             }
+    //         } else {
+    //             const cacheData = db
+    //                 .selectFrom('cache_raw')
+    //                 .leftJoin(
+    //                     'data_raw',
+    //                     (join) => join
+    //                         .on('data_raw.game_id', '=', cache.game_id)
+    //                         .onRef('data_raw.name', '=', 'cache_raw.name')
+    //                         .onRef('data_raw.crc', '=', 'cache_raw.crc')
+    //                 )
+    //                 .where('cache_id', '=', cache.id)
+    //                 .select(['cache_raw.name', 'data_raw.bytes'])
+    //                 .stream();
 
-                for await (const data of cacheData) {
-                    if (data.bytes && data.bytes.length) {
-                        const entry = new ZipDeflate(data.name, { level: 0 });
-                        zip.add(entry);
-                        entry.push(data.bytes, true);
-                    }
-                }
-            }
+    //             for await (const data of cacheData) {
+    //                 if (data.bytes && data.bytes.length) {
+    //                     const entry = new ZipDeflate(data.name, { level: 0 });
+    //                     zip.add(entry);
+    //                     entry.push(data.bytes, true);
+    //                 }
+    //             }
+    //         }
 
-            zip.end();
-        } catch (err) {
-            reply.raw.end();
-            console.error(err);
-        }
-    });
+    //         zip.end();
+    //     } catch (err) {
+    //         reply.raw.end();
+    //         console.error(err);
+    //     }
+    // });
 
     // produce a cache in the client format and zip it for the user
     app.get('/:id/cache.zip', async (req: any, reply) => {
@@ -297,7 +298,7 @@ export default async function (app: FastifyInstance) {
                     });
 
                     for await (const data of cacheData) {
-                        if (data.bytes) {
+                        if (data.bytes && data.bytes.length) {
                             stream.write(data.archive, data.group, data.bytes, data.version);
                         }
                     }
@@ -327,7 +328,7 @@ export default async function (app: FastifyInstance) {
                     });
 
                     for await (const data of cacheData) {
-                        if (data.bytes) {
+                        if (data.bytes && data.bytes.length) {
                             stream.write(data.archive, data.group, data.bytes, data.version);
                         }
                     }
@@ -354,7 +355,7 @@ export default async function (app: FastifyInstance) {
                     .stream();
 
                 for await (const data of cacheData) {
-                    if (data.bytes) {
+                    if (data.bytes && data.bytes.length) {
                         const entry = new ZipDeflate(data.name, { level: 0 });
                         zip.add(entry);
                         entry.push(data.bytes, true);

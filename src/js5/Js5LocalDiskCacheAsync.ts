@@ -21,7 +21,7 @@ export default class Js5LocalDiskCacheAsync {
         this.dat.end();
     }
 
-    write(archive: number, file: number, src: Uint8Array, version: number) {
+    write(archive: number, group: number, src: Uint8Array, version: number) {
         // append version trailer
         const tmp = new Uint8Array(src.length + 2);
         tmp.set(src, 0);
@@ -29,7 +29,7 @@ export default class Js5LocalDiskCacheAsync {
         tmp[src.length + 1] = version;
         src = tmp;
 
-        this.idx[archive].pos = file * 6;
+        this.idx[archive].pos = group * 6;
         this.idx[archive].p3(src.length);
         this.idx[archive].p3(++this.lastChunk);
 
@@ -38,20 +38,31 @@ export default class Js5LocalDiskCacheAsync {
         const buf = new Packet(src);
         let part = 0;
         while (buf.available > 0) {
+            let available = buf.available;
+            if (group > 65535) {
+                if (available > 510) {
+                    available = 510;
+                }
+            } else {
+                if (available > 512) {
+                    available = 512;
+                }
+            }
+
             chunk.pos = 0;
-            chunk.p2(file);
+            if (group > 65535) {
+                chunk.p4(group);
+            } else {
+                chunk.p2(group);
+            }
             chunk.p2(part++);
-            if (buf.available > 512) {
+            if (buf.available > available) {
                 chunk.p3(++this.lastChunk);
             } else {
                 chunk.p3(0);
             }
             chunk.p1(archive);
 
-            let available = buf.available;
-            if (available > 512) {
-                available = 512;
-            }
             buf.gdata(chunk.data, 8, available);
 
             this.dat.write(chunk.data);

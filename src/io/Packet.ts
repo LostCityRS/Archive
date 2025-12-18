@@ -117,6 +117,11 @@ export default class Packet {
         this.pos += 2;
     }
 
+    p4(value: number): void {
+        this.view.setUint32(this.pos, value);
+        this.pos += 4;
+    }
+
     pdata(src: Uint8Array, off: number, len: number): void {
         this.data.set(src.subarray(off, off + len), this.pos);
         this.pos += len - off;

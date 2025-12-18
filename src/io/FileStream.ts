@@ -1,29 +1,30 @@
-import zlib from 'zlib';
-
-import Packet from '#/io/Packet.js';
 import RandomAccessFile from '#/io/RandomAccessFile.js';
 
 export default class FileStream {
+    static buf = new Uint8Array(520);
+
     dat: RandomAccessFile;
     idx: RandomAccessFile[] = [];
+    idxCount: number[] = [];
 
     constructor(dir: string) {
         this.dat = new RandomAccessFile(`${dir}/main_file_cache.dat`);
 
-        for (let i: number = 0; i <= 4; i++) {
+        for (let i = 0; i <= 4; i++) {
             this.idx[i] = new RandomAccessFile(`${dir}/main_file_cache.idx${i}`);
+            this.idxCount[i] = this.idx[i].length / 6;
         }
     }
 
-    count(index: number): number {
-        if (index < 0 || index > this.idx.length || !this.idx[index]) {
+    count(archive: number): number {
+        if (archive < 0 || archive > this.idx.length || !this.idx[archive]) {
             return 0;
         }
 
-        return this.idx[index].length / 6;
+        return this.idxCount[archive];
     }
 
-    read(archive: number, file: number, decompress: boolean = false): Uint8Array | null {
+    read(archive: number, file: number): Uint8Array | null {
         if (!this.dat) {
             return null;
         }
@@ -36,62 +37,59 @@ export default class FileStream {
             return null;
         }
 
-        const idx: RandomAccessFile = this.idx[archive];
+        const idx = this.idx[archive];
         idx.pos = file * 6;
-        const idxHeader: Packet = idx.gPacket(6);
+        idx.gdata(FileStream.buf, 0, 6);
 
-        const size: number = idxHeader.g3();
-        let sector: number = idxHeader.g3();
+        const len = (FileStream.buf[0] << 16) + (FileStream.buf[1] << 8) + FileStream.buf[2];
+        let block = (FileStream.buf[3] << 16) + (FileStream.buf[4] << 8) + FileStream.buf[5];
 
-        if (size > 2000000) {
+        if (len > 2_000_000) {
             return null;
         }
 
-        if (sector <= 0 || sector > this.dat.length / 520) {
+        if (block <= 0 || block > this.dat.length / 520) {
             return null;
         }
 
-        const data: Packet = new Packet(new Uint8Array(size));
-        for (let part: number = 0; data.pos < size; part++) {
-            if (sector === 0) {
+        const buf = new Uint8Array(len);
+        let off = 0;
+        let blockNum = 0;
+        while (off < len) {
+            if (block === 0) {
                 break;
             }
 
-            this.dat.pos = sector * 520;
+            this.dat.pos = block * 520;
 
-            let available: number = size - data.pos;
-            if (available > 512) {
-                available = 512;
+            let blockSize = len - off;
+            if (blockSize > 512) {
+                blockSize = 512;
             }
 
-            const header: Packet = this.dat.gPacket(available + 8);
-            const sectorFile: number = header.g2();
-            const sectorPart: number = header.g2();
-            const nextSector: number = header.g3();
-            const sectorIndex: number = header.g1();
+            this.dat.gdata(FileStream.buf, 0, 8 + blockSize);
 
-            if (file !== sectorFile || part !== sectorPart || archive !== sectorIndex - 1) {
+            const actualBlockFile = (FileStream.buf[0] << 8) + FileStream.buf[1];
+            const actualBlockNum = (FileStream.buf[2] << 8) + FileStream.buf[3];
+            const nextBlock = (FileStream.buf[4] << 16) + (FileStream.buf[5] << 8) + FileStream.buf[6];
+            const actualBlockArchive = FileStream.buf[7];
+
+            if (file !== actualBlockFile || blockNum !== actualBlockNum || archive !== actualBlockArchive - 1) {
                 return null;
             }
 
-            if (nextSector < 0 || nextSector > this.dat.length / 520) {
+            if (nextBlock < 0 || nextBlock > this.dat.length / 520) {
                 return null;
             }
 
-            data.pdata(header.data, header.pos, header.data.length);
+            buf.set(FileStream.buf.subarray(8, 8 + blockSize), off);
+            off += blockSize;
 
-            sector = nextSector;
+            blockNum++;
+            block = nextBlock;
         }
 
-        if (!decompress) {
-            return data.data;
-        }
-
-        if (archive === 0) {
-            return data.data;
-        } else {
-            return new Uint8Array(zlib.gunzipSync(data.data));
-        }
+        return buf;
     }
 
     has(archive: number, file: number): boolean {
@@ -107,18 +105,18 @@ export default class FileStream {
             return false;
         }
 
-        const idx: RandomAccessFile = this.idx[archive];
+        const idx = this.idx[archive];
         idx.pos = file * 6;
-        const idxHeader: Packet = idx.gPacket(6);
+        idx.gdata(FileStream.buf, 0, 6);
 
-        const size: number = idxHeader.g3();
-        const sector: number = idxHeader.g3();
+        const len = (FileStream.buf[0] << 16) + (FileStream.buf[1] << 8) + FileStream.buf[2];
+        const block = (FileStream.buf[3] << 16) + (FileStream.buf[4] << 8) + FileStream.buf[5];
 
-        if (size > 2000000) {
+        if (len > 2000000) {
             return false;
         }
 
-        if (sector <= 0 || sector > this.dat.length / 520) {
+        if (block <= 0 || block > this.dat.length / 520) {
             return false;
         }
 

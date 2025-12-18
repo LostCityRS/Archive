@@ -18,15 +18,16 @@ export default class RandomAccessFile {
         return fs.fstatSync(this.fd).size;
     }
 
-    gdata(length: number): Buffer {
-        const buffer = Buffer.alloc(length);
-        fs.readSync(this.fd, buffer, 0, length, this.pos);
-        this.pos += length;
-        return buffer;
+    gdata(dst: Uint8Array, off: number, len: number) {
+        fs.readSync(this.fd, dst, off, len, this.pos);
+        this.pos += len;
     }
 
     gPacket(length: number): Packet {
-        return new Packet(this.gdata(length));
+        const buffer = Buffer.alloc(length);
+        fs.readSync(this.fd, buffer, 0, length, this.pos);
+        this.pos += length;
+        return new Packet(buffer);
     }
 
     pdata(buffer: Uint8Array | Buffer | Packet): void {

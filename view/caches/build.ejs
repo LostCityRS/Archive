@@ -17,11 +17,13 @@
 						<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
 							<h2 class="text-2xl text-harvest-gold-300 font-medium">Cache Info</h2>
 
+							<% if (cache.timestamp) { %>
 							<div>
 								<h2 class="text-lg text-siam-300">Timestamp</h2>
 
 								<span class="text-xl font-medium"><%= cache.timestamp.toISOString().split('T')[0] %></span>
 							</div>
+							<% } %>
 
 							<div>
 								<h2 class="text-lg text-siam-300">Raw Size</h2>
@@ -76,28 +78,6 @@
 									<% } %>
 								</span>
 							</div>
-
-
-							<% if (cache.versioned) { %>
-							<div class="flex flex-col gap-3">
-								<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Flat Files</h2>
-
-								<%- include('_partial/file_download', {
-									icon: 'file-archive',
-									name: `files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
-									href: `/caches/${cache.id}/files.zip`,
-									size: 'lg'
-									}) 
-								%>
-
-								<span class="text-siam-200">
-									<i data-lucide="info"
-										 class="size-4 inline-block align-sub"></i>
-
-									This is a zip export with individual files inside.
-								</span>
-							</div>
-							<% } %>
 
 							<% if (!cache.versioned) { %>
 							<div class="flex flex-col gap-3">

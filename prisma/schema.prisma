@@ -27,10 +27,10 @@ model game {
 model data_versioned {
     game_id Int
 
-    archive Int   @db.UnsignedTinyInt // archives are 0-255
+    archive Int   @db.UnsignedTinyInt
     // "group" and "file" are considered interchangeable terms
-    group   Int   @db.UnsignedInt // groups can be >65535
-    version Int   @db.UnsignedInt // versions can be >65535 (i.e. timestamps)
+    group   Int   @db.UnsignedInt
+    version Int
     crc     Int
     bytes   Bytes @db.MediumBlob
     len     Int   @db.UnsignedInt
@@ -85,8 +85,8 @@ model cache_source {
 model cache_versioned {
     cache_id Int
 
-    archive Int
-    group   Int
+    archive Int @db.UnsignedTinyInt
+    group   Int @db.UnsignedInt
     version Int
     crc     Int
 
