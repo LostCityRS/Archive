@@ -1,0 +1,12 @@
+<%
+  const units = ['bytes', 'KB', 'MB', 'GB', 'TB'];
+  let size = bytes;
+  let unit = 0;
+
+  while (size >= 1024 && unit < units.length - 1) {
+    size /= 1024;
+    unit++;
+  }
+
+  const rounded = unit === 0 ? size : Math.round(size * 100) / 100;
+%><%= rounded %> <%= units[unit] %>
