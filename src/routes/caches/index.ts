@@ -181,8 +181,10 @@ export default async function (app: FastifyInstance) {
         const pipe = pipeline(readable, out, reply.raw).catch(() => { });
 
         req.raw.on('close', () => {
-            aborted = true;
-            out.destroy();
+            if (req.raw.aborted) {
+                aborted = true;
+                out.destroy();
+            }
         });
 
         try {
@@ -263,9 +265,11 @@ export default async function (app: FastifyInstance) {
         const pipe = pipeline(out, reply.raw).catch(() => { });
 
         req.raw.on('close', () => {
-            aborted = true;
-            zip.terminate();
-            out.destroy();
+            if (req.raw.aborted) {
+                aborted = true;
+                zip.terminate();
+                out.destroy();
+            }
         });
 
         try {
