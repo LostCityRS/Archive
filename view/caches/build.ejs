@@ -13,70 +13,146 @@
 			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
 
 				<div class="flex flex-col gap-6">
-					<div class="grid grid-cols-5 gap-4">
-						<div class="col-span-5 md:col-span-2">
+					<div class="grid grid-cols-4 gap-4">
+						<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
+							<h2 class="text-2xl text-harvest-gold-300 font-medium">Cache Info</h2>
 
-							<% if (cache.timestamp !== null) { %>
-							<strong><%= cache.timestamp.toISOString().split('T')[0] %></strong>
-							<br>
-							<% } %>
+							<div>
+								<h2 class="text-lg text-siam-300">Timestamp</h2>
 
-							Raw size:
-							<strong>
-							<% if (cache.len > 1024 * 1024) { %>
-							<%= Math.trunc((cache.len / 1024 / 1024) * 100) / 100 %> MB
-							<% } else if (cache.len > 1024) { %>
-							<%= Math.trunc((cache.len / 1024) * 100) / 100 %> KB
-							<% } else { %>
-							<%= cache.len %> bytes
-							<% } %>
-							</strong>
-							<br>
+								<span class="text-xl font-medium"><%= cache.timestamp.toISOString().split('T')[0] %></span>
+							</div>
 
-							Missing <strong><%= cache.missing %></strong> files of <strong><%= cache.total %></strong> tracked.<br>
+							<div>
+								<h2 class="text-lg text-siam-300">Raw Size</h2>
 
-							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/cache.zip">Download cache</a><br>
+								<span class="text-xl font-semibold">
+									<%- include('_partial/format_size', { bytes: cache.len }) %>
+								</span>
+							</div>
+
+							<div>
+								<h2 class="text-lg text-siam-300">Files Tracked</h2>
+
+								<div class="text-xl font-medium"><%= cache.total - cache.missing %> / <%= cache.total %></div>
+
+								<div class="text-sm text-siam-200">(Missing <%= cache.missing %> of <%= cache.total %> files)</div>
+							</div>
+
+							<div>
+								<h2 class="text-lg text-siam-300">Game</h2>
+
+								<span class="text-xl font-medium"><%= cache.display_name %></span>
+							</div>
+
+							<div>
+								<h2 class="text-lg text-siam-300">Build</h2>
+
+								<span class="text-xl font-medium"><%= cache.build %></span>
+							</div>
+						</div>
+
+						<div class="col-span-4 md:col-span-3 flex flex-col gap-6">
+
+							<div class="flex flex-col gap-3">
+								<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Cache</h2>
+
+								<%- include('_partial/file_download', {
+									icon: 'file-archive',
+									name: `cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
+									href: `/caches/${cache.id}/cache.zip`,
+									size: 'lg'
+									}) 
+								%>
+
+								<span class="text-siam-200">
+									<i data-lucide="info"
+										 class="size-4 inline-block align-sub"></i>
+
+									<% if (cache.versioned) { %>
+									This is a zip export with main_file_cache inside.
+									<% } else { %>
+									This is a zip export with individual files inside.
+									<% } %>
+								</span>
+							</div>
+
+
 							<% if (cache.versioned) { %>
-							<sup>This is a zip export with main_file_cache inside.</sup>
-							<% } else { %>
-							<sup>This is a zip export with individual files inside.</sup>
-							<% } %>
+							<div class="flex flex-col gap-3">
+								<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Flat Files</h2>
 
-							<% if (cache.versioned) { %>
-							<br>
-							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/files.zip">Download flat files</a><br>
-							<sup>This is a zip export with individual files inside.</sup>
+								<%- include('_partial/file_download', {
+									icon: 'file-archive',
+									name: `files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
+									href: `/caches/${cache.id}/files.zip`,
+									size: 'lg'
+									}) 
+								%>
+
+								<span class="text-siam-200">
+									<i data-lucide="info"
+										 class="size-4 inline-block align-sub"></i>
+
+									This is a zip export with individual files inside.
+								</span>
+							</div>
 							<% } %>
 
 							<% if (!cache.versioned) { %>
-							<hr class="border-t-1 border-white/20 my-1">
-							<% for (const file of data) { %>
-							<% if (file.len !== null) { %>
-							<a class="hover:text-gray-300 underline" href="/caches/<%= cache.id %>/get/<%= file.name %>" title="<%= file.name %>">
-								<%= file.name %>: <%= file.len %> bytes
-							</a><br>
-							<sup>CRC: <%= file.crc %></sup>
-							<% } else { %>
-							<%= file.name %> (missing)
-							<% } %>
-							<br>
-							<% } %>
+							<div class="flex flex-col gap-3">
+								<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
+
+								<% if (data.length > 0) { %>
+
+								<% for (const file of data) { %>
+								<% if (file.len !== null) { %>
+
+								<%- include('_partial/file_download', {
+									icon: 'file',
+									name: file.name,
+									href: `/caches/${cache.id}/get/${file.name}`,
+									crc: file.crc,
+									fileSize: file.len,
+									size: 'sm'
+									}) 
+								%>
+
+								<% } %>
+								<% } %>
+								<% } else { %>
+									
+								<div class="text-siam-300">
+									No files are available for download in this cache.
+								</div>
+
+								<% } %>
+
+							</div>
 							<% } %>
 
-						</div>
+							<div class="flex flex-col gap-3">
+								<h2 class="text-2xl text-harvest-gold-300 font-medium">Related Files</h2>
 
-						<div class="col-span-5 md:col-span-3">
+								<% if (clients.length > 0) { %>
 
-							<% if (clients.length) { %>
-							Related Files<br>
+								<% for (const client of clients) { %>
+								<%- include('_partial/file_download', {
+									icon: 'file',
+									name: client.name,
+									href: `/clients/${client.id}/download`,
+									size: 'lg'
+								}) %>
+								<% } %>
 
-							<% for (const client of clients) { %>
-							<a class="hover:text-gray-300 underline" href="/clients/<%= client.id %>/download" title="<%= client.name %>">
-								<%= client.name %>: <%= client.len %> bytes
-							</a>
-							<br>
-							<% } %>
-							<% } %>
+								<% } else { %>
+
+								<div class="text-siam-300">
+									No related files were found for this cache.
+								</div>
+
+								<% } %>
+							</div>
 
 						</div>
 					</div>

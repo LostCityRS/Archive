@@ -1,0 +1,40 @@
+<%
+  const iconName = typeof icon !== 'undefined' ? icon : 'file';
+  const paddingClass = size === 'lg' ? 'p-4' : 'p-2';
+%>
+
+<a href="<%= href %>"
+	 class="flex items-center justify-between gap-2 bg-siam-800 <%= paddingClass %> rounded-md max-w-xl hover:bg-siam-900 transition-colors group focus:outline-none focus:ring-2 focus:ring-siam-300"
+	 title="<%= name %>">
+	<div class="flex items-center gap-3">
+		<i data-lucide="<%= iconName %>"
+			 class="text-siam-300"
+			 aria-hidden="true">
+		</i>
+
+		<div class="flex flex-col">
+			<span class="underline-offset-2 group-hover:underline">
+				<%= name %>
+			</span>
+
+			<% if (typeof crc !== 'undefined' && crc) { %>
+			<span class="text-[0.7rem] text-siam-200 leading-snug">
+				CRC: <%= crc %>
+			</span>
+			<% } %>
+		</div>
+	</div>
+
+	<span class="flex items-center gap-2 px-2 text-sm text-siam-100">
+		<% if (typeof fileSize !== 'undefined' && fileSize) { %>
+		<span class="whitespace-nowrap">
+			<%- include('_partial/format_size', { bytes: fileSize }) %>
+		</span>
+		<% } %>
+
+		<i data-lucide="download"
+			 class="size-4"
+			 aria-hidden="true">
+		</i>
+	</span>
+</a>
