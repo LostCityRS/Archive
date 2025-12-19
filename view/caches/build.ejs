@@ -36,9 +36,13 @@
 							<div>
 								<h2 class="text-lg text-siam-300">Files Tracked</h2>
 
+								<% if (cache.missing > 0) { %>
 								<div class="text-xl font-medium"><%= cache.total - cache.missing %> / <%= cache.total %></div>
 
 								<div class="text-sm text-siam-200">(Missing <%= cache.missing %> of <%= cache.total %> files)</div>
+								<% } else { %>
+								<div class="text-xl font-medium"><%= cache.total %></div>
+								<% } %>
 							</div>
 
 							<div>
