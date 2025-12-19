@@ -8,63 +8,61 @@
 <body>
 	<%- include('_partial/header', { title, icon: 'database-zap' }); %>
 
-	<div class="px-3">
-		<div class="container mx-auto -mt-24">
-			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
+	<%- include('_partial/layout/primary_open'); %>
 
-				<div class="flex flex-col gap-6">
-					<div class="grid grid-cols-4 gap-4">
-						<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
-							<h2 class="text-2xl text-harvest-gold-300 font-medium">Cache Info</h2>
+	<div class="flex flex-col gap-6">
+		<div class="grid grid-cols-4 gap-4">
+			<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
+				<h2 class="text-2xl text-harvest-gold-300 font-medium">Cache Info</h2>
 
-							<% if (cache.timestamp) { %>
-							<div>
-								<h2 class="text-lg text-siam-300">Timestamp</h2>
+				<% if (cache.timestamp) { %>
+				<div>
+					<h2 class="text-lg text-siam-300">Timestamp</h2>
 
-								<span class="text-xl font-medium"><%= cache.timestamp.toISOString().split('T')[0] %></span>
-							</div>
-							<% } %>
+					<span class="text-xl font-medium"><%= cache.timestamp.toISOString().split('T')[0] %></span>
+				</div>
+				<% } %>
 
-							<div>
-								<h2 class="text-lg text-siam-300">Raw Size</h2>
+				<div>
+					<h2 class="text-lg text-siam-300">Raw Size</h2>
 
-								<span class="text-xl font-semibold">
-									<%- include('_partial/format_size', { bytes: cache.len }) %>
-								</span>
-							</div>
+					<span class="text-xl font-semibold">
+						<%- include('_partial/format_size', { bytes: cache.len }) %>
+					</span>
+				</div>
 
-							<div>
-								<h2 class="text-lg text-siam-300">Files Tracked</h2>
+				<div>
+					<h2 class="text-lg text-siam-300">Files Tracked</h2>
 
-								<% if (cache.missing > 0) { %>
-								<div class="text-xl font-medium"><%= cache.total - cache.missing %> / <%= cache.total %></div>
+					<% if (cache.missing > 0) { %>
+					<div class="text-xl font-medium"><%= cache.total - cache.missing %> / <%= cache.total %></div>
 
-								<div class="text-sm text-siam-200">(Missing <%= cache.missing %> of <%= cache.total %> files)</div>
-								<% } else { %>
-								<div class="text-xl font-medium"><%= cache.total %></div>
-								<% } %>
-							</div>
+					<div class="text-sm text-siam-200">(Missing <%= cache.missing %> of <%= cache.total %> files)</div>
+					<% } else { %>
+					<div class="text-xl font-medium"><%= cache.total %></div>
+					<% } %>
+				</div>
 
-							<div>
-								<h2 class="text-lg text-siam-300">Game</h2>
+				<div>
+					<h2 class="text-lg text-siam-300">Game</h2>
 
-								<span class="text-xl font-medium"><%= cache.display_name %></span>
-							</div>
+					<span class="text-xl font-medium"><%= cache.display_name %></span>
+				</div>
 
-							<div>
-								<h2 class="text-lg text-siam-300">Build</h2>
+				<div>
+					<h2 class="text-lg text-siam-300">Build</h2>
 
-								<span class="text-xl font-medium"><%= cache.build %></span>
-							</div>
-						</div>
+					<span class="text-xl font-medium"><%= cache.build %></span>
+				</div>
+			</div>
 
-						<div class="col-span-4 md:col-span-3 flex flex-col gap-6">
+			<div class="col-span-4 md:col-span-3 flex flex-col gap-6">
 
-							<% if (cache.versioned) { %>
-							<div class="flex flex-col gap-3">
-								<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Cache</h2>
+				<% if (cache.versioned) { %>
+				<div class="flex flex-col gap-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Cache</h2>
 
-								<%- include('_partial/file_download', {
+					<%- include('_partial/file_download', {
 									icon: 'file-archive',
 									name: `cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
 									href: `/caches/${cache.id}/cache.zip`,
@@ -72,25 +70,25 @@
 									}) 
 								%>
 
-								<span class="text-siam-200">
-									<i data-lucide="info"
-										 class="size-4 inline-block align-sub"></i>
+					<span class="text-siam-200">
+						<i data-lucide="info"
+							 class="size-4 inline-block align-sub"></i>
 
-									This is a zip export with main_file_cache inside.
-								</span>
-							</div>
-							<% } %>
+						This is a zip export with main_file_cache inside.
+					</span>
+				</div>
+				<% } %>
 
-							<div class="flex flex-col gap-3">
-								<h2 class="text-2xl text-harvest-gold-300 font-medium">
-									<% if (cache.versioned) { %>
-									Download Flat Files
-									<% } else { %>
-									Download Cache
-									<% } %>
-								</h2>
+				<div class="flex flex-col gap-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">
+						<% if (cache.versioned) { %>
+						Download Flat Files
+						<% } else { %>
+						Download Cache
+						<% } %>
+					</h2>
 
-								<%- include('_partial/file_download', {
+					<%- include('_partial/file_download', {
 									icon: 'file-archive',
 									name: `files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
 									href: `/caches/${cache.id}/files.zip`,
@@ -98,24 +96,24 @@
 									}) 
 								%>
 
-								<span class="text-siam-200">
-									<i data-lucide="info"
-										 class="size-4 inline-block align-sub"></i>
+					<span class="text-siam-200">
+						<i data-lucide="info"
+							 class="size-4 inline-block align-sub"></i>
 
-									This is a zip export with individual files inside.
-								</span>
-							</div>
+						This is a zip export with individual files inside.
+					</span>
+				</div>
 
-							<% if (!cache.versioned) { %>
-							<div class="flex flex-col gap-3">
-								<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
+				<% if (!cache.versioned) { %>
+				<div class="flex flex-col gap-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
 
-								<% if (data.length > 0) { %>
+					<% if (data.length > 0) { %>
 
-								<% for (const file of data) { %>
-								<% if (file.len !== null) { %>
+					<% for (const file of data) { %>
+					<% if (file.len !== null) { %>
 
-								<%- include('_partial/file_download', {
+					<%- include('_partial/file_download', {
 									icon: 'file',
 									name: file.name,
 									href: `/caches/${cache.id}/get/${file.name}`,
@@ -125,55 +123,53 @@
 									}) 
 								%>
 
-								<% } %>
-								<% } %>
-								<% } else { %>
-									
-								<div class="text-siam-300">
-									No files are available for download in this cache.
-								</div>
+					<% } %>
+					<% } %>
+					<% } else { %>
 
-								<% } %>
+					<div class="text-siam-300">
+						No files are available for download in this cache.
+					</div>
 
-							</div>
-							<% } %>
+					<% } %>
 
-							<div class="flex flex-col gap-3">
-								<h2 class="text-2xl text-harvest-gold-300 font-medium">Related Files</h2>
+				</div>
+				<% } %>
 
-								<% if (clients.length > 0) { %>
+				<div class="flex flex-col gap-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">Related Files</h2>
 
-								<% for (const client of clients) { %>
-								<%- include('_partial/file_download', {
+					<% if (clients.length > 0) { %>
+
+					<% for (const client of clients) { %>
+					<%- include('_partial/file_download', {
 									icon: 'file',
 									name: client.name,
 									href: `/clients/${client.id}/download`,
 									size: 'lg'
 								}) %>
-								<% } %>
+					<% } %>
 
-								<% } else { %>
+					<% } else { %>
 
-								<div class="text-siam-300">
-									No related files were found for this cache.
-								</div>
-
-								<% } %>
-							</div>
-
-						</div>
+					<div class="text-siam-300">
+						No related files were found for this cache.
 					</div>
-				</div>
 
-				<hr class="border-t-2 border-white/20">
-
-				<div class="flex justify-center mt-1 mb-1">
-					<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
+					<% } %>
 				</div>
 
 			</div>
 		</div>
 	</div>
+
+	<hr class="border-t-2 border-white/20">
+
+	<div class="flex justify-center mt-1 mb-1">
+		<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
+	</div>
+
+	<%- include('_partial/layout/primary_close'); %>
 </body>
 
 <%- include('_partial/footer'); %>

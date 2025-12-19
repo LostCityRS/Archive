@@ -8,92 +8,95 @@
 <body>
 	<%- include('_partial/header', { title, icon }); %>
 
-	<div class="px-3">
-		<div class="container mx-auto -mt-24">
-			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
+	<%- include('_partial/layout/primary_open'); %>
 
-				<% const hasTimestamp = clients.find(x => x.timestamp); %>
-				<% const hasNewspost = clients.find(x => x.newspost); %>
+	<% const hasTimestamp = clients.find(x => x.timestamp); %>
+	<% const hasNewspost = clients.find(x => x.newspost); %>
 
-				<div>
-					<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
-						<table class="table table-zebra">
-							<thead>
-								<tr class="bg-base-100">
-									<th scope="col" class="font-medium!">
-										Build
-									</th>
-									<% if (hasTimestamp) { %>
-									<th scope="col" class="font-medium!">
-										Timestamp
-									</th>
-									<% } %>
-									<% if (hasNewspost) { %>
-									<th scope="col" class="font-medium!">
-										News Post
-									</th>
-									<% } %>
-									<th scope="col" class="font-medium!">
-										File Name
-									</th>
-									<th scope="col" class="font-medium!">
-										File Size
-									</th>
-									<th scope="col">
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								<% for (client of clients) { %>
-								<tr>
-									<td class="w-0 whitespace-nowrap font-medium text-heading">
-										<%= client.build %>
-									</td>
-									<% if (hasNewspost) { %>
-									<td>
-										<% if (client.timestamp) { %>
-											<%= client.timestamp.toISOString().split('T')[0] %>
-										<% } else { %>
-										-
-										<% } %>
-									</td>
-									<% } %>
-									<% if (hasNewspost) { %>
-									<td>
-										<% if (game.newspost_url !== null && client.newspost !== null) { %>
-										<a class="hover:text-gray-300" href="<%= game.newspost_url%><%= encodeURI(client.newspost) %>" rel="noreferrer"><%= client.newspost %></a>
-										<% } else { %>
-										<%= client.newspost ?? '-' %>
-										<% } %>
-									</td>
-									<% } %>
-									<td>
-										<%= client.name %>
-									</td>
-									<td>
-										<%= client.len %> bytes
-									</td>
-									<td class="w-0 whitespace-nowrap">
-										<a class="btn btn-sm btn-success" href="/clients/<%= client.id %>/download">
-                                            <i data-lucide="download" class="size-4"></i> 
+	<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
+		<table class="table table-zebra">
+			<thead>
+				<tr class="bg-base-100">
+					<th scope="col"
+							class="font-medium!">
+						Build
+					</th>
+					<% if (hasTimestamp) { %>
+					<th scope="col"
+							class="font-medium!">
+						Timestamp
+					</th>
+					<% } %>
+					<% if (hasNewspost) { %>
+					<th scope="col"
+							class="font-medium!">
+						News Post
+					</th>
+					<% } %>
+					<th scope="col"
+							class="font-medium!">
+						File Name
+					</th>
+					<th scope="col"
+							class="font-medium!">
+						File Size
+					</th>
+					<th scope="col">
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<% for (client of clients) { %>
+				<tr>
+					<td class="w-0 whitespace-nowrap font-medium text-heading">
+						<%= client.build %>
+					</td>
+					<% if (hasNewspost) { %>
+					<td>
+						<% if (client.timestamp) { %>
+						<%= client.timestamp.toISOString().split('T')[0] %>
+						<% } else { %>
+						-
+						<% } %>
+					</td>
+					<% } %>
+					<% if (hasNewspost) { %>
+					<td>
+						<% if (game.newspost_url !== null && client.newspost !== null) { %>
+						<a class="hover:text-gray-300"
+							 href="<%= game.newspost_url%><%= encodeURI(client.newspost) %>"
+							 rel="noreferrer"><%= client.newspost %></a>
+						<% } else { %>
+						<%= client.newspost ?? '-' %>
+						<% } %>
+					</td>
+					<% } %>
+					<td>
+						<%= client.name %>
+					</td>
+					<td>
+						<%= client.len %> bytes
+					</td>
+					<td class="w-0 whitespace-nowrap">
+						<a class="btn btn-sm btn-success"
+							 href="/clients/<%= client.id %>/download">
+							<i data-lucide="download"
+								 class="size-4"></i>
 
-                                            Download
-                                        </a>
-									</td>
-								</tr>
-								<% } %>
-							</tbody>
-						</table>
-					</div>
-				</div>
-
-				<div class="flex justify-center mt-1 mb-1">
-					<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
-				</div>
-
-			</div>
-		</div>
+							Download
+						</a>
+					</td>
+				</tr>
+				<% } %>
+			</tbody>
+		</table>
 	</div>
+
+	<div class="flex justify-center mt-1 mb-1">
+		<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
+	</div>
+
+	<%- include('_partial/layout/primary_close'); %>
 </body>
 
 <%- include('_partial/footer'); %>

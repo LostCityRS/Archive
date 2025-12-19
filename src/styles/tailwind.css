@@ -63,3 +63,9 @@
   --color-harvest-gold-900: #664428;
   --color-harvest-gold-950: #372213;
 }
+
+@layer base {
+  body {
+    @apply flex flex-col min-h-screen;
+  }
+}

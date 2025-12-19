@@ -7,92 +7,91 @@
 
 <body>
 	<%- include('_partial/header', { title, icon }); %>
+	
+	<%- include('_partial/layout/primary_open'); %>
 
-	<div class="px-3">
-		<div class="container mx-auto -mt-24">
-			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
-				<h1 class="text-2xl font-bold">Welcome to our Archive -- squared!</h1>
+	<h1 class="text-2xl font-bold">Welcome to our Archive -- squared!</h1>
 
-				<p>
-					Hey there! If you're looking for old Jagex game data, I'm happy to share what I've collected here.
-				</p>
+	<p>
+		Hey there! If you're looking for old Jagex game data, I'm happy to share what I've collected here.
+	</p>
 
-				<h3 class="text-lg">Disclaimer first:</h3>
+	<h3 class="text-lg">Disclaimer first:</h3>
 
-				<p>
-					1. None of the caches or clients here are runnable on their own.<br>
-					2. We don't provide datamining tools to visualize their contents.<br>
-					3. Multiplayer games rely on server software that never left Jagex's infrastructure. They have been lost to time.
-				</p>
+	<p>
+		1. None of the caches or clients here are runnable on their own.<br>
+		2. We don't provide datamining tools to visualize their contents.<br>
+		3. Multiplayer games rely on server software that never left Jagex's infrastructure. They have been lost to time.
+	</p>
 
-				<p>
-					In the context of RuneScape: caches only store the minimum graphical and audio assets to be directed by a server.<br>
-					Every single behavior, every line of dialogue, every NPC spawn, every item spawn, were all server-side and not saved on your PCs.<br>
-					And no, those old PI servers from 2006 do not preserve the game.
-				</p>
+	<p>
+		In the context of RuneScape: caches only store the minimum graphical and audio assets to be directed by a server.<br>
+		Every single behavior, every line of dialogue, every NPC spawn, every item spawn, were all server-side and not saved on your PCs.<br>
+		And no, those old PI servers from 2006 do not preserve the game.
+	</p>
 
-				<h3 class="text-lg">Why's it called Archive squared?</h3>
+	<h3 class="text-lg">Why's it called Archive squared?</h3>
 
-				<p>
-					I've got a two-fer answer, so take your pick!<br>
-					&nbsp;&nbsp; 1. This is (going to be) more than a comprehensive client-cache archive, exponentially more.<br>
-					&nbsp;&nbsp; It'll consolidate data AND our knowledge.<br>
-					&nbsp;&nbsp; 2. I already have a HTTP archive with established URLs that people rely on currently.<br>
-				</p>
+	<p>
+		I've got a two-fer answer, so take your pick!<br>
+		&nbsp;&nbsp; 1. This is (going to be) more than a comprehensive client-cache archive, exponentially more.<br>
+		&nbsp;&nbsp; It'll consolidate data AND our knowledge.<br>
+		&nbsp;&nbsp; 2. I already have a HTTP archive with established URLs that people rely on currently.<br>
+	</p>
 
-				<p>
-					Soon we'll track/tag/index historical sources here -- that's screenshots, videos, and text.<br>
-					And we'll let you upload prospective caches to be checked by us. No more searching for a file upload host and linking in a Discord.
-				</p>
+	<p>
+		Soon we'll track/tag/index historical sources here -- that's screenshots, videos, and text.<br>
+		And we'll let you upload prospective caches to be checked by us. No more searching for a file upload host and linking in a Discord.
+	</p>
 
-				<h3 class="text-lg">How does the archive work?</h3>
+	<h3 class="text-lg">How does the archive work?</h3>
 
-				<p>
-					The import process takes in caches off users' old PCs, reads them like a client would, and stores their data in this database.<br>
-					Files inside caches are then deduplicated and a "cache" entry is created, linked to those imported files.<br>
-					Nearby game versions can share up to 99% of data so the space savings are immense.
-				</p>
+	<p>
+		The import process takes in caches off users' old PCs, reads them like a client would, and stores their data in this database.<br>
+		Files inside caches are then deduplicated and a "cache" entry is created, linked to those imported files.<br>
+		Nearby game versions can share up to 99% of data so the space savings are immense.
+	</p>
 
-				<p>
-					The export process streams files from our database, zips them, and sends it to you.<br>
-					You have the option of getting cache data in Jagex's disk store format, or as individual files.
-				</p>
+	<p>
+		The export process streams files from our database, zips them, and sends it to you.<br>
+		You have the option of getting cache data in Jagex's disk store format, or as individual files.
+	</p>
 
-				<h2 class="text-xl font-semibold">API</h2>
+	<h2 class="text-xl font-semibold">API</h2>
 
-				<p>
-					You can export caches in the client format:<br>
-					<code>GET /caches/:id/cache.zip</code><br><br>
+	<p>
+		You can export caches in the client format:<br>
+		<code>GET /caches/:id/cache.zip</code><br><br>
 
-					You can a pull list of individual files for a cache:<br>
-					<code>GET /caches/:id/get/info.json</code><br><br>
+		You can a pull list of individual files for a cache:<br>
+		<code>GET /caches/:id/get/info.json</code><br><br>
 
-					You can download files individually:<br>
-					<code>GET /caches/:id/get/:archive/:groupOrFile</code><br>
-					<code>GET /caches/:id/get/:name</code><br><br>
+		You can download files individually:<br>
+		<code>GET /caches/:id/get/:archive/:groupOrFile</code><br>
+		<code>GET /caches/:id/get/:name</code><br><br>
 
-					"id" is our internal ID counter that you get by browsing the caches page.
-				</p>
+		"id" is our internal ID counter that you get by browsing the caches page.
+	</p>
 
-				<h2 class="text-xl font-semibold">OpenRS2</h2>
+	<h2 class="text-xl font-semibold">OpenRS2</h2>
 
-				<p>
-					Yes, the archive functionality is similar to <a class="underline" href="https://archive.openrs2.org">OpenRS2</a>.<br>
-					Firstly, OpenRS2 is great, and I wholeheartedly support Graham's effort. I hope it doesn't go anywhere.<br>
-					The main difference between this and OpenRS2's archive is that,<br>
-					- OpenRS2 does not support RS2 caches before June 1 2004, RSC caches, or any FunOrb game caches.<br>
-					- OpenRS2 clients are only served for his tracked games up to ~2011.<br>
-					- OpenRS2 tracks XTEAs.<br>
-					- OpenRS2 downloads OSRS/RS3 caches from Jagex on a schedule.<br>
-					In the future I might tackle the last two points but as long as OpenRS2 exists it feels overly redundant.
-				</p>
-			</div>
+	<p>
+		Yes, the archive functionality is similar to <a class="underline"
+			 href="https://archive.openrs2.org">OpenRS2</a>.<br>
+		Firstly, OpenRS2 is great, and I wholeheartedly support Graham's effort. I hope it doesn't go anywhere.<br>
+		The main difference between this and OpenRS2's archive is that,<br>
+		- OpenRS2 does not support RS2 caches before June 1 2004, RSC caches, or any FunOrb game caches.<br>
+		- OpenRS2 clients are only served for his tracked games up to ~2011.<br>
+		- OpenRS2 tracks XTEAs.<br>
+		- OpenRS2 downloads OSRS/RS3 caches from Jagex on a schedule.<br>
+		In the future I might tackle the last two points but as long as OpenRS2 exists it feels overly redundant.
+	</p>
 
-			<p class="text-right">
-				Made with <span title="love">❤️</span> by <span title="backend, frontend">Pazaz</span> and <span title="frontend design, templates">BigShot</span>
-			</p>
-		</div>
-	</div>
+	<p class="text-right">
+		Made with <span title="love">❤️</span> by <span title="backend, frontend">Pazaz</span> and <span title="frontend design, templates">BigShot</span>
+	</p>
+
+	<%- include('_partial/layout/primary_close'); %>
 </body>
 
 <%- include('_partial/footer'); %>

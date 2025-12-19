@@ -8,90 +8,97 @@
 <body>
 	<%- include('_partial/header', { title, icon }); %>
 
-	<div class="px-3">
-		<div class="container mx-auto -mt-24">
-			<div class="card card-body p-4 md:p-6 bg-base-200 min-h-25 rounded-b-none">
+	<%- include('_partial/layout/primary_open'); %>
 
-				<% const hasTimestamp = caches.find(x => x.timestamp); %>
-				<% const hasNewspost = caches.find(x => x.newspost); %>
+	<% const hasTimestamp = caches.find(x => x.timestamp); %>
+	<% const hasNewspost = caches.find(x => x.newspost); %>
 
-				<div>
-					<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
-						<table class="table table-zebra">
+	<div>
+		<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
+			<table class="table table-zebra">
 
-							<thead>
-								<tr class="bg-base-100">
-									<th scope="col" class="font-medium!">
-										Build
-									</th>
-									<% if (hasTimestamp) { %>
-									<th scope="col" class="font-medium!">
-										Timestamp
-									</th>
-									<% } %>
-									<% if (hasNewspost) { %>
-									<th scope="col" class="font-medium!">
-										News Post
-									</th>
-									<% } %>
-									<th scope="col">
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								<% for (cache of caches) { %>
-								<tr>
-									<td class="w-0 whitespace-nowrap font-medium text-heading">
-										<a class="hover:text-gray-300" href="/caches/<%= cache.id %>"><%= cache.build %></a>
-									</td>
-									<% if (hasTimestamp) { %>
-									<td>
-										<% if (cache.timestamp) { %>
-										<a class="hover:text-gray-300" href="/caches/<%= cache.id %>">
-											<%= cache.timestamp.toISOString().split('T')[0] %>
-										</a>
-										<% } else { %>
-										-
-										<% } %>
-									</td>
-									<% } %>
-									<% if (hasNewspost) { %>
-									<td>
-										<% if (game.newspost_url !== null && cache.newspost !== null) { %>
-										<a class="hover:text-gray-300" href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>" rel="noreferrer"><%= cache.newspost %></a>
-										<% } else { %>
-										<%= cache.newspost ?? '-' %>
-										<% } %>
-									</td>
-									<% } %>
-									<td class="w-0 whitespace-nowrap">
-										<a class="btn btn-sm btn-info" href="/caches/<%= cache.id %>" title="<%= cache.id %>">
-                                            More details
-                                        </a>
-										<a class="btn btn-sm btn-success" href="/caches/<%= cache.id %>/cache.zip">
-                                            <i data-lucide="download" class="size-4"></i> 
+				<thead>
+					<tr class="bg-base-100">
+						<th scope="col"
+								class="font-medium!">
+							Build
+						</th>
+						<% if (hasTimestamp) { %>
+						<th scope="col"
+								class="font-medium!">
+							Timestamp
+						</th>
+						<% } %>
+						<% if (hasNewspost) { %>
+						<th scope="col"
+								class="font-medium!">
+							News Post
+						</th>
+						<% } %>
+						<th scope="col">
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					<% for (cache of caches) { %>
+					<tr>
+						<td class="w-0 whitespace-nowrap font-medium text-heading">
+							<a class="hover:text-gray-300"
+								 href="/caches/<%= cache.id %>"><%= cache.build %></a>
+						</td>
+						<% if (hasTimestamp) { %>
+						<td>
+							<% if (cache.timestamp) { %>
+							<a class="hover:text-gray-300"
+								 href="/caches/<%= cache.id %>">
+								<%= cache.timestamp.toISOString().split('T')[0] %>
+							</a>
+							<% } else { %>
+							-
+							<% } %>
+						</td>
+						<% } %>
+						<% if (hasNewspost) { %>
+						<td>
+							<% if (game.newspost_url !== null && cache.newspost !== null) { %>
+							<a class="hover:text-gray-300"
+								 href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>"
+								 rel="noreferrer"><%= cache.newspost %></a>
+							<% } else { %>
+							<%= cache.newspost ?? '-' %>
+							<% } %>
+						</td>
+						<% } %>
+						<td class="w-0 whitespace-nowrap">
+							<a class="btn btn-sm btn-info"
+								 href="/caches/<%= cache.id %>"
+								 title="<%= cache.id %>">
+								More details
+							</a>
+							<a class="btn btn-sm btn-success"
+								 href="/caches/<%= cache.id %>/cache.zip">
+								<i data-lucide="download"
+									 class="size-4"></i>
 
-                                            Download
-                                        </a>
-									</td>
-								</tr>
-								<% } %>
-							</tbody>
-						</table>
-					</div>
-
-					<% if (game.name !== 'runescape' && game.name !== 'oldscape' && game.name !== 'rsclassic') { %>
-					FunOrb caches may show multiple entries per real version, it cannot be deduplicated into one entry as they didn't store Js5Indexes.
+								Download
+							</a>
+						</td>
+					</tr>
 					<% } %>
-				</div>
-
-				<div class="flex justify-center mt-1 mb-1">
-					<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
-				</div>
-
-			</div>
+				</tbody>
+			</table>
 		</div>
+
+		<% if (game.name !== 'runescape' && game.name !== 'oldscape' && game.name !== 'rsclassic') { %>
+		FunOrb caches may show multiple entries per real version, it cannot be deduplicated into one entry as they didn't store Js5Indexes.
+		<% } %>
 	</div>
+
+	<div class="flex justify-center mt-1 mb-1">
+		<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
+	</div>
+
+	<%- include('_partial/layout/primary_close'); %>
 </body>
 
 <%- include('_partial/footer'); %>
