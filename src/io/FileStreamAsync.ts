@@ -50,8 +50,6 @@ export default class FileStreamAsync {
         this.idxBuf[archive].p3(src.length);
         this.idxBuf[archive].p3(++this.lastBlock);
 
-        const chunk = new Packet(new Uint8Array(520));
-
         const buf = new Packet(src);
         let part = 0;
         while (buf.available > 0) {
@@ -60,7 +58,7 @@ export default class FileStreamAsync {
                 available = 512;
             }
 
-            chunk.pos = 0;
+            const chunk = new Packet(new Uint8Array(520));
             chunk.p2(file);
             chunk.p2(part++);
             if (buf.available > available) {

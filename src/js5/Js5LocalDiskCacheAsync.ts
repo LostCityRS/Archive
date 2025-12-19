@@ -50,8 +50,6 @@ export default class Js5LocalDiskCacheAsync {
         this.idxBuf[archive].p3(src.length);
         this.idxBuf[archive].p3(++this.lastBlock);
 
-        const chunk = new Packet(new Uint8Array(520));
-
         const buf = new Packet(src);
         let part = 0;
         while (buf.available > 0) {
@@ -66,7 +64,7 @@ export default class Js5LocalDiskCacheAsync {
                 }
             }
 
-            chunk.pos = 0;
+            const chunk = new Packet(new Uint8Array(520));
             if (group > 65535) {
                 chunk.p4(group);
             } else {
