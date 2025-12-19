@@ -27,7 +27,7 @@
 					<h2 class="text-lg text-siam-300">Raw Size</h2>
 
 					<span class="text-xl font-semibold">
-						<%- include('_partial/format_size', { bytes: cache.len }) %>
+						<%- include('_component/format_size', { bytes: cache.len }) %>
 					</span>
 				</div>
 
@@ -62,7 +62,7 @@
 				<div class="flex flex-col gap-3">
 					<h2 class="text-2xl text-harvest-gold-300 font-medium">Download Cache</h2>
 
-					<%- include('_partial/file_download', {
+					<%- include('_component/file_download', {
 									icon: 'file-archive',
 									name: `cache-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
 									href: `/caches/${cache.id}/cache.zip`,
@@ -88,7 +88,7 @@
 						<% } %>
 					</h2>
 
-					<%- include('_partial/file_download', {
+					<%- include('_component/file_download', {
 									icon: 'file-archive',
 									name: `files-${cache.name}-${cache.build}-lostcity#${cache.id}.zip`,
 									href: `/caches/${cache.id}/files.zip`,
@@ -113,7 +113,7 @@
 					<% for (const file of data) { %>
 					<% if (file.len !== null) { %>
 
-					<%- include('_partial/file_download', {
+					<%- include('_component/file_download', {
 									icon: 'file',
 									name: file.name,
 									href: `/caches/${cache.id}/get/${file.name}`,
@@ -142,7 +142,7 @@
 					<% if (clients.length > 0) { %>
 
 					<% for (const client of clients) { %>
-					<%- include('_partial/file_download', {
+					<%- include('_component/file_download', {
 									icon: 'file',
 									name: client.name,
 									href: `/clients/${client.id}/download`,

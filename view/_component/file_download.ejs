@@ -28,7 +28,7 @@
 	<span class="flex items-center gap-2 px-2 text-sm text-siam-100">
 		<% if (typeof fileSize !== 'undefined' && fileSize) { %>
 		<span class="whitespace-nowrap">
-			<%- include('_partial/format_size', { bytes: fileSize }) %>
+			<%- include('_component/format_size', { bytes: fileSize }) %>
 		</span>
 		<% } %>
 
