@@ -1,0 +1,22 @@
+<%
+	const navItems = [
+    	{ href: "/caches/list", label: "Caches", match: "cache" },
+    	{ href: "/clients/list", label: "Clients", match: "client" },
+    	{ href: "", label: "Sources", match: "source" },
+    	{ href: "", label: "Upload", match: "upload" },
+    	{ href: "/about", label: "About", match: "about" },
+  	];
+
+	// Hide the classes that indicate the link is active if specified
+  	const hideActiveClasses = typeof hideActive !== 'undefined' ? hideActive : false;
+%>
+
+<% for (const item of navItems) { %>
+<%- include('_partial/nav/nav_item', {
+    	href: item.href,
+    	label: item.label,
+    	match: item.match,
+    	title,
+    	hideActiveClasses
+    }) %>
+<% } %>
