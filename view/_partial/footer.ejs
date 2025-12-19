@@ -1,4 +1,31 @@
-<script src="/js/lucide.min.js"></script>
-<script>
-    lucide.createIcons();
-</script>
+<div class="bg-base-100 px-3 py-10">
+	<div class="container mx-auto">
+		<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+			<aside>
+				<img src="/img/lc-logo-min.webp"
+						 class="h-10"
+						 alt="Lost City Logo" />
+
+				<p>
+					<span class="font-semibold text-harvest-gold-300">Lost City Archive<sup>^2</sup></span>
+					<br />
+					<span class="text-sm text-siam-300">Where Lost Games Live Again</span>
+				</p>
+			</aside>
+
+			<div>
+				<% if (typeof timeTaken !== 'undefined' && timeTaken !== null) { %>
+				<div class="sm:text-right text-sm text-siam-200">
+					Page: <strong><%= timeTaken %> ms</strong>
+				</div>
+
+				<hr class="border-white/20 my-2" />
+				<% } %>
+
+				<ul class="flex flex-wrap font-medium gap-4">
+					<%- include('_partial/nav/nav_items', { hideActive: true }) %>
+				</ul>
+			</div>
+		</div>
+	</div>
+</div>

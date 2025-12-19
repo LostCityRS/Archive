@@ -94,13 +94,11 @@
 		<% } %>
 	</div>
 
-	<div class="flex justify-center mt-1 mb-1">
-		<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
-	</div>
-
 	<%- include('_partial/layout/primary_close'); %>
+
+	<%- include('_partial/footer', { timeTaken: stats.timeTaken }); %>
 </body>
 
-<%- include('_partial/footer'); %>
+<%- include('_partial/footer_scripts'); %>
 
 </html>

@@ -7,7 +7,7 @@
 
 <body>
 	<%- include('_partial/header', { title, icon }); %>
-	
+
 	<%- include('_partial/layout/primary_open'); %>
 
 	<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
@@ -47,13 +47,11 @@
 		</table>
 	</div>
 
-	<div class="flex justify-center mt-1 mb-1">
-		<span class="text-xs">Page: <%= stats.timeTaken %> ms</span>
-	</div>
-
 	<%- include('_partial/layout/primary_close'); %>
+
+	<%- include('_partial/footer', { timeTaken: stats.timeTaken }); %>
 </body>
 
-<%- include('_partial/footer'); %>
+<%- include('_partial/footer_scripts'); %>
 
 </html>
