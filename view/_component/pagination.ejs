@@ -1,0 +1,69 @@
+<div class="flex flex-wrap justify-between items-center gap-2 p-4">
+	<div class="join">
+		<% const currentParams = filtersQuery ? filtersQuery + '&' : ''; %>
+		<% const limitParam = 'limit=' + pagination.limit; %>
+
+		<% if (pagination.page > 1) { %>
+		<a href="?<%= currentParams %><%= limitParam %>&page=<%= pagination.page - 1 %>"
+			 class="join-item btn">Previous</a>
+		<% } %>
+
+		<% if (pagination.page > 3) { %>
+		<a href="?<%= currentParams %><%= limitParam %>&page=1"
+			 class="join-item btn">1</a>
+
+		<% if (pagination.page > 4) { %>
+		<span class="join-item btn btn-disabled">...</span>
+		<% } %>
+		<% } %>
+
+		<% for (var i = Math.max(1, pagination.page - 2); i <= Math.min(pagination.totalPages, pagination.page + 2); i++) { %>
+		<a href="?<%= currentParams %><%= limitParam %>&page=<%= i %>"
+			 class="join-item btn <%= pagination.page === i ? 'btn-active' : '' %>"><%= i %></a>
+		<% } %>
+
+		<% if (pagination.page < pagination.totalPages - 2) { %>
+		<% if (pagination.page < pagination.totalPages - 3) { %>
+		<span class="join-item btn btn-disabled">...</span>
+		<% } %>
+
+		<a href="?<%= currentParams %><%= limitParam %>&page=<%= pagination.totalPages %>"
+			 class="join-item btn"><%= pagination.totalPages %></a>
+		<% } %>
+
+		<% if (pagination.page < pagination.totalPages) { %>
+		<a href="?<%= currentParams %><%= limitParam %>&page=<%= pagination.page + 1 %>"
+			 class="join-item btn">Next</a>
+		<% } %>
+	</div>
+
+	<div>
+		<div class="flex items-center gap-2">
+			<form method="GET"
+						class="flex items-center gap-2">
+				<label for="limit">Show:</label>
+				<select name="limit"
+								id="limit"
+								class="select select-sm"
+								onchange="this.form.submit()">
+					<% [10, 25, 50, 100, 500].forEach(function(option) { %>
+					<option value="<%= option %>"
+									<%= option === pagination.limit ? 'selected' : '' %>><%= option %></option>
+					<% }) %>
+				</select>
+
+				<% Object.keys(filters).forEach(function(key) { %>
+				<% if (filters[key] && key !== 'limit' && key !== 'page') { %>
+				<input type="hidden"
+							 name="<%= key %>"
+							 value="<%= filters[key] %>">
+				<% } %>
+				<% }) %>
+			</form>
+
+			<span>Page <%= pagination.page %> of <%= pagination.totalPages %></span>
+		</div>
+		<p class="text-right">Total rows: <%= pagination.totalRecords %></p>
+	</div>
+
+</div>
