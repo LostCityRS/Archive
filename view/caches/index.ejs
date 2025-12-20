@@ -45,6 +45,12 @@
 				<% } %>
 			</tbody>
 		</table>
+
+		<%- include('_component/pagination', { 
+			pagination,
+			filters: {},
+			filtersQuery: ''
+		}); %>
 	</div>
 
 	<%- include('_partial/layout/primary_close'); %>

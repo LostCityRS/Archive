@@ -8,6 +8,7 @@ import { db, cacheExecute, cacheExecuteTakeFirst, cacheExecuteTakeFirstOrThrow }
 import FileStreamAsync from '#/io/FileStreamAsync.js';
 
 import Js5LocalDiskCacheAsync from '#/js5/Js5LocalDiskCacheAsync.js';
+import { sql } from 'kysely';
 
 async function getCache(id: number) {
     return cacheExecuteTakeFirstOrThrow(`cache_${id}`, db
@@ -135,7 +136,10 @@ export default async function (app: FastifyInstance) {
     app.get('/list', async (req, reply) => {
         const start = Date.now();
 
-        const games = await cacheExecute('caches', db
+        const { page: pageParam = "1", limit: limitParam = "25" } = req.query as { page?: string, limit?: string };
+        const page = parseInt(pageParam), limit = parseInt(limitParam);
+
+        let baseQuery = db
             .selectFrom('game')
             .select(['game.name', 'game.display_name'])
             .leftJoin(
@@ -143,19 +147,37 @@ export default async function (app: FastifyInstance) {
                 (join) => join.onRef('game.id', '=', 'cache.game_id')
             )
             .select(db.fn.count('cache.id').as('count'))
-            .groupBy('game.id').orderBy('name', 'asc')
+            .groupBy('game.id')
+            .orderBy(
+                sql`CASE
+                    WHEN game.name = 'runescape' THEN 0
+                    WHEN game.name = 'rsclassic' THEN 1
+                    WHEN game.name = 'oldscape' THEN 2
+                    ELSE 3
+                END`
+            ).orderBy('name', 'asc');
+
+        const games = await cacheExecute(`caches_list_${page}_limit_${limit}`,
+            baseQuery.limit(limit).offset((page - 1) * limit)
         );
 
-        // (reverse) forced order:
-        games.sort((a: any, b: any) => a.name === 'oldscape' ? -1 : 0);
-        games.sort((a: any, b: any) => a.name === 'rsclassic' ? -1 : 0);
-        games.sort((a: any, b: any) => a.name === 'runescape' ? -1 : 0);
+        const totalRecords = await cacheExecuteTakeFirst('caches_list_totalrecords',
+            db.selectFrom('game').select(({ fn }) => fn.count('game.id').as('count'))
+        );
+        const totalPages = totalRecords ? Math.ceil(totalRecords.count / limit) : 0;
 
         const timeTaken = Date.now() - start;
+
         return reply.view('caches/index', {
             games,
             stats: {
-                timeTaken
+                timeTaken,
+            },
+            pagination: {
+                page,
+                limit,
+                totalRecords: totalRecords.count,
+                totalPages
             },
             title: 'Caches',
             icon: 'database-zap',
