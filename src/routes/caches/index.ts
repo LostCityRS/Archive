@@ -4,6 +4,7 @@ import { makeZip } from 'client-zip';
 import { FastifyInstance } from 'fastify';
 
 import { db, cacheExecute, cacheExecuteTakeFirst, cacheExecuteTakeFirstOrThrow } from '#/db/query.js';
+import { buildQueryString } from '#/util/Filters.js';
 
 import FileStreamAsync from '#/io/FileStreamAsync.js';
 
@@ -136,7 +137,7 @@ export default async function (app: FastifyInstance) {
     app.get('/list', async (req, reply) => {
         const start = Date.now();
 
-        const { page: pageParam = "1", limit: limitParam = "25" } = req.query as { page?: string, limit?: string };
+        const { page: pageParam = "1", limit: limitParam = "25", sort, order } = req.query as { page?: string, limit?: string, sort?: "name" | "count", order?: "asc" | "desc" };
         const page = parseInt(pageParam), limit = parseInt(limitParam);
 
         let baseQuery = db
@@ -147,8 +148,10 @@ export default async function (app: FastifyInstance) {
                 (join) => join.onRef('game.id', '=', 'cache.game_id')
             )
             .select(db.fn.count('cache.id').as('count'))
-            .groupBy('game.id')
-            .orderBy(
+            .groupBy('game.id');
+
+        if (sort === undefined) {
+            baseQuery = baseQuery.orderBy(
                 sql`CASE
                     WHEN game.name = 'runescape' THEN 0
                     WHEN game.name = 'rsclassic' THEN 1
@@ -156,6 +159,9 @@ export default async function (app: FastifyInstance) {
                     ELSE 3
                 END`
             ).orderBy('name', 'asc');
+        } else {
+            baseQuery = baseQuery.orderBy(sort, order)
+        }
 
         const games = await cacheExecute(`caches_list_${page}_limit_${limit}`,
             baseQuery.limit(limit).offset((page - 1) * limit)
@@ -168,7 +174,12 @@ export default async function (app: FastifyInstance) {
 
         const timeTaken = Date.now() - start;
 
+        const filters: Record<string, any> = {};
+        if (sort !== undefined) filters.sort = sort;
+        if (order !== undefined) filters.order = order;
+
         return reply.view('caches/index', {
+            buildQueryString,
             games,
             stats: {
                 timeTaken,
@@ -179,6 +190,7 @@ export default async function (app: FastifyInstance) {
                 totalRecords: totalRecords.count,
                 totalPages
             },
+            filters,
             title: 'Caches',
             icon: 'database-zap',
         });

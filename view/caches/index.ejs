@@ -16,11 +16,25 @@
 				<tr class="bg-base-100">
 					<th scope="col"
 							class="font-medium!">
-						Game
+						<%- include('_component/sort_header', { 
+							sort: 'name', 
+							label: 'Game', 
+							filters: filters, 
+							filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+							defaultSort: '', 
+							defaultOrder: '' }) 
+						%>
 					</th>
 					<th scope="col"
 							class="font-medium!">
-						Archived
+						<%- include('_component/sort_header', { 
+							sort: 'count', 
+							label: 'Archived', 
+							filters: filters, 
+							filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+							defaultSort: '', 
+							defaultOrder: '' }) 
+						%>
 					</th>
 					<th scope="col">
 					</th>
@@ -31,7 +45,9 @@
 				<tr>
 					<td class="w-0 whitespace-nowrap">
 						<a class="hover:text-gray-300"
-							 href="/caches/list/<%= game.name %>"><%= game.display_name %></a>
+							 href="/caches/list/<%= game.name %>">
+							<%= game.display_name %>
+						</a>
 					</td>
 					<td>
 						<a class="hover:text-gray-300"
@@ -48,8 +64,8 @@
 
 		<%- include('_component/pagination', { 
 			pagination,
-			filters: {},
-			filtersQuery: ''
+			filters: filters,
+			filtersQuery: buildQueryString(filters, ['page'])
 		}); %>
 	</div>
 
