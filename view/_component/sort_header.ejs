@@ -1,0 +1,24 @@
+<%
+  const baseQuery = filtersQuery ? filtersQuery + '&' : '';
+
+  const currentSort  = filters.sort  || defaultSort;
+  const currentOrder = filters.order || defaultOrder;
+
+  const isActive = currentSort === sort;
+
+  let nextOrder = 'asc';
+  if (isActive) {
+    nextOrder = currentOrder === 'asc' ? 'desc' : 'asc';
+  }
+
+  let iconName = 'chevrons-up-down';
+  if (isActive) {
+    iconName = currentOrder === 'asc' ? 'arrow-up' : 'arrow-down';
+  }
+%>
+
+<a href="?<%= baseQuery %>sort=<%= sort %>&order=<%= nextOrder %>&limit=<%= pagination.limit %>"
+   class="flex items-center gap-1 <%= (locals && locals.class) || '' %>">
+  <span><%= label %></span>
+  <i data-lucide="<%= iconName %>" class="size-5 <%= isActive ? '' : 'text-siam-600' %>"></i>
+</a>
