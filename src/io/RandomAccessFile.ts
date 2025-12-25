@@ -18,9 +18,10 @@ export default class RandomAccessFile {
         return fs.fstatSync(this.fd).size;
     }
 
-    gdata(dst: Uint8Array, off: number, len: number) {
-        fs.readSync(this.fd, dst, off, len, this.pos);
+    gdata(dst: NodeJS.ArrayBufferView, off: number, len: number) {
+        const n = fs.readSync(this.fd, dst, off, len, this.pos);
         this.pos += len;
+        return n;
     }
 
     gPacket(length: number): Packet {
@@ -30,13 +31,9 @@ export default class RandomAccessFile {
         return new Packet(buffer);
     }
 
-    pdata(buffer: Uint8Array | Buffer | Packet): void {
-        if (buffer instanceof Packet) {
-            buffer = buffer.data;
-        }
-
-        fs.writeSync(this.fd, buffer, 0, buffer.length, this.pos);
-        this.pos += buffer.length;
+    pdata(src: Uint8Array, off: number, len: number): void {
+        fs.writeSync(this.fd, src, off, len, this.pos);
+        this.pos += len - off;
     }
 
     close(): void {
