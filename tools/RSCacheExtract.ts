@@ -149,6 +149,8 @@ export default function rsCacheExtract(inFile: string, outDir: string) {
             fs.mkdirSync(b, { recursive: true });
             b += d.cFileName;
 
+            console.log(b, filetimeToDate(d.ftLastWriteTime));
+
             const out = new RandomAccessFile(b);
 
             let br = 0;
