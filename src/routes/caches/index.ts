@@ -632,7 +632,38 @@ export default async function (app: FastifyInstance) {
         return reply.redirect(`/caches/${cache.id}/cache.zip`, 302);
     });
 
-    app.get('/:gameName/files', async (req: any, reply) => {
+    app.get('/groups/:gameName', async (req: any, reply) => {
+        const { gameName } = req.params;
+
+        if (gameName.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const data = await db
+            .selectFrom('data_versioned')
+            .select(['archive', 'group', 'version', 'crc', 'len'])
+            .where('game_id', '=', game.id)
+            .orderBy('archive', 'asc')
+            .orderBy('group', 'asc')
+            .orderBy('version', 'asc')
+            .execute();
+
+        return reply.view('caches/groups', {
+            title: `All ${game.display_name} Cache Groups`,
+            data,
+            stats: {
+                timeTaken: 0
+            }
+        });
+    });
+
+    app.get('/files/:gameName', async (req: any, reply) => {
         const { gameName } = req.params;
 
         if (gameName.length === 0) {
@@ -653,7 +684,7 @@ export default async function (app: FastifyInstance) {
             .orderBy('timestamp', 'asc')
             .execute();
 
-        return reply.view('caches/raw', {
+        return reply.view('caches/files', {
             title: `All ${game.display_name} Cache Files`,
             data,
             stats: {
