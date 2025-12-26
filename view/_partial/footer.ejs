@@ -14,14 +14,19 @@
 			</aside>
 
 			<div>
-				<% if (typeof timeTaken !== 'undefined' && timeTaken !== null) { %>
 				<div class="sm:text-right text-sm text-siam-200">
+					<% if (typeof timeTaken !== 'undefined' && timeTaken !== null) { %>
 					Page: <strong><%= timeTaken %> ms</strong> |
-					<a href="https://github.com/LostCityRS/Archive">Source Code</a>
+					<% } %>
+
+					<a href="https://github.com/LostCityRS/Archive"
+						 class="link"
+						 target="_blank">
+						Source Code
+					</a>
 				</div>
 
 				<hr class="border-white/20 my-2" />
-				<% } %>
 
 				<ul class="flex flex-wrap font-medium gap-4">
 					<%- include('_partial/nav/nav_items', { hideActive: true }) %>
