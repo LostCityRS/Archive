@@ -22,6 +22,12 @@
 				CRC: <%= crc %>
 			</span>
 			<% } %>
+
+			<% if (typeof timestamp !== 'undefined' && timestamp) { %>
+			<span class="text-[0.7rem] text-siam-200 leading-snug">
+				Timestamp: <%= timestamp.toISOString().replace('T', ' ').split('.')[0] %>
+			</span>
+			<% } %>
 		</div>
 	</div>
 
