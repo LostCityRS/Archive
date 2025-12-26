@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<%- include('_partial/head', { title }); %>
+</head>
+
+<body>
+	<%- include('_partial/header', { title, icon: 'database-zap' }); %>
+
+	<%- include('_partial/layout/primary_open'); %>
+
+	<div class="flex flex-col gap-6">
+		<div class="grid grid-cols-4 gap-4">
+			<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
+			</div>
+
+			<div class="col-span-4 md:col-span-3 flex flex-col gap-6">
+
+				<div class="flex flex-col gap-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
+
+					<% if (data.length > 0) { %>
+
+					<% for (const file of data) { %>
+					<% if (file.len !== null) { %>
+
+					<%- include('_component/file_download', {
+									icon: 'file',
+									name: file.name,
+									crc: file.crc,
+									timestamp: file.timestamp,
+									fileSize: file.len,
+									size: 'sm'
+									}) 
+								%>
+
+					<% } %>
+					<% } %>
+					<% } else { %>
+
+					<div class="text-siam-300">
+						No files are available for download in this cache.
+					</div>
+
+					<% } %>
+
+				</div>
+
+			</div>
+		</div>
+	</div>
+
+	<%- include('_partial/layout/primary_close'); %>
+
+	<%- include('_partial/footer', { timeTaken: stats.timeTaken }); %>
+</body>
+
+<%- include('_partial/footer_scripts'); %>
+
+</html>

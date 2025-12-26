@@ -631,4 +631,34 @@ export default async function (app: FastifyInstance) {
 
         return reply.redirect(`/caches/${cache.id}/cache.zip`, 302);
     });
+
+    app.get('/:gameName/files', async (req: any, reply) => {
+        const { gameName } = req.params;
+
+        if (gameName.length === 0) {
+            return reply.redirect('/', 302);
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const data = await db
+            .selectFrom('data_raw')
+            .select(['name', 'crc', 'len', 'timestamp'])
+            .where('game_id', '=', game.id)
+            .orderBy('name', 'asc')
+            .orderBy('timestamp', 'asc')
+            .execute();
+
+        return reply.view('caches/raw', {
+            title: `All ${game.display_name} Cache Files`,
+            data,
+            stats: {
+                timeTaken: 0
+            }
+        });
+    });
 }
