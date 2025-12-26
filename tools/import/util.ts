@@ -413,7 +413,14 @@ export async function importEarlyRs2(source: string, gameName: string, build: st
             continue;
         }
 
-        const realName = fromBase37(BigInt(file.name));
+        let name37 = 0n;
+        try {
+            name37 = BigInt(file.name);
+        } catch (err) {
+            continue;
+        }
+
+        const realName = fromBase37(name37);
         if (
             realName === 'invalid_name' ||
             realName === 'runescape_ja'
@@ -453,22 +460,26 @@ export async function importEarlyRs2(source: string, gameName: string, build: st
                 process.exit(1);
             }
 
-            const old = await db
-                .selectFrom('data_raw')
-                .select('timestamp')
-                .where('name', '=', realName)
-                .where('crc', '=', crc)
-                .executeTakeFirstOrThrow();
-
-            if (old.timestamp === null || old.timestamp > mtime) {
-                await db
-                    .updateTable('data_raw')
-                    .set({
-                        timestamp: mtime
-                    })
+            if (mtime < new Date('2015-01-01')) {
+                const old = await db
+                    .selectFrom('data_raw')
+                    .select('timestamp')
+                    .where('game_id', '=', game.id)
                     .where('name', '=', realName)
                     .where('crc', '=', crc)
-                    .execute();
+                    .executeTakeFirstOrThrow();
+
+                if (old.timestamp === null || old.timestamp > mtime) {
+                    await db
+                        .updateTable('data_raw')
+                        .set({
+                            timestamp: mtime
+                        })
+                        .where('game_id', '=', game.id)
+                        .where('name', '=', realName)
+                        .where('crc', '=', crc)
+                        .execute();
+                }
             }
         }
     }
