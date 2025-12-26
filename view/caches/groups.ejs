@@ -26,13 +26,15 @@
 					<% if (file.len !== null) { %>
 
 					<%- include('_component/file_download', {
-									icon: 'file',
-									name: `Archive ${file.archive}, Group ${file.group}, Version ${file.version}`,
-									crc: file.crc,
-									fileSize: file.len,
-									size: 'sm'
-									}) 
-								%>
+						icon: 'file',
+						name: file.archive === 0 && file.version === 0 ?
+							`Jag ${file.group}` :
+							`Archive ${file.archive}, Group ${file.group}, Version ${file.version}`,
+						href: `/caches/groups/${game.name}/${file.archive}/${file.group}/${file.version}/${file.crc}`,
+						crc: file.crc,
+						fileSize: file.len,
+						size: 'sm'
+					}) %>
 
 					<% } %>
 					<% } %>

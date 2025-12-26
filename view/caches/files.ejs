@@ -26,14 +26,14 @@
 					<% if (file.len !== null) { %>
 
 					<%- include('_component/file_download', {
-									icon: 'file',
-									name: file.name,
-									crc: file.crc,
-									timestamp: file.timestamp,
-									fileSize: file.len,
-									size: 'sm'
-									}) 
-								%>
+						icon: 'file',
+						name: file.name,
+						href: `/caches/files/${game.name}/${file.name}/${file.crc}`,
+						crc: file.crc,
+						timestamp: file.timestamp,
+						fileSize: file.len,
+						size: 'sm'
+					}) %>
 
 					<% } %>
 					<% } %>

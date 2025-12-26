@@ -633,6 +633,8 @@ export default async function (app: FastifyInstance) {
     });
 
     app.get('/groups/:gameName', async (req: any, reply) => {
+        const start = Date.now();
+
         const { gameName } = req.params;
 
         if (gameName.length === 0) {
@@ -654,16 +656,49 @@ export default async function (app: FastifyInstance) {
             .orderBy('version', 'asc')
             .execute();
 
+        const timeTaken = Date.now() - start;
         return reply.view('caches/groups', {
             title: `All ${game.display_name} Cache Groups`,
+            game,
             data,
             stats: {
-                timeTaken: 0
+                timeTaken
             }
         });
     });
 
+    // route is overly verbose but need another index to simplify (also not meant for general use)
+    app.get('/groups/:gameName/:archive/:group/:version/:crc', async (req: any, reply) => {
+        const { gameName, archive, group, version, crc } = req.params;
+
+        if (gameName.length === 0 || archive.length === 0 || group.length === 0 || version.length === 0 || crc.length === 0) {
+            throw new Error('Missing route parameters');
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const data = await db
+            .selectFrom('data_versioned')
+            .selectAll()
+            .where('game_id', '=', game.id)
+            .where('archive', '=', archive)
+            .where('group', '=', group)
+            .where('version', '=', version)
+            .where('crc', '=', crc)
+            .executeTakeFirstOrThrow();
+
+        reply.status(200);
+        reply.header('Content-Disposition', `attachment; filename="${group}.dat"`);
+        reply.send(data.bytes);
+    });
+
     app.get('/files/:gameName', async (req: any, reply) => {
+        const start = Date.now();
+
         const { gameName } = req.params;
 
         if (gameName.length === 0) {
@@ -684,12 +719,40 @@ export default async function (app: FastifyInstance) {
             .orderBy('timestamp', 'asc')
             .execute();
 
+        const timeTaken = Date.now() - start;
         return reply.view('caches/files', {
             title: `All ${game.display_name} Cache Files`,
+            game,
             data,
             stats: {
-                timeTaken: 0
+                timeTaken
             }
         });
+    });
+
+    app.get('/files/:gameName/:name/:crc', async (req: any, reply) => {
+        const { gameName, name, crc } = req.params;
+
+        if (gameName.length === 0 || name.length === 0 || crc.length === 0) {
+            throw new Error('Missing route parameters');
+        }
+
+        const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
+            .selectFrom('game')
+            .selectAll()
+            .where('name', '=', gameName)
+        );
+
+        const data = await db
+            .selectFrom('data_raw')
+            .selectAll()
+            .where('game_id', '=', game.id)
+            .where('name', '=', name)
+            .where('crc', '=', crc)
+            .executeTakeFirstOrThrow();
+
+        reply.status(200);
+        reply.header('Content-Disposition', `attachment; filename="${name}"`);
+        reply.send(data.bytes);
     });
 }
