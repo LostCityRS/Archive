@@ -1,10 +1,10 @@
 import { db } from '#/db/query.js';
-import { importRaw, importJs5, importOnDemand } from '#tools/import/util.js';
+import { importJs5, importOnDemand, importRaw, importEarlyRs2 } from '#tools/import/util.js';
 
 const args = process.argv.slice(2);
 
 if (args.length < 4) {
-    console.error('args: <source> <game> <build> <js5/ondemand/raw>');
+    console.error('args: <source> <game> <build> <js5/ondemand/raw/earlyrs2>');
     process.exit(1);
 }
 
@@ -18,6 +18,8 @@ try {
         cache = await importOnDemand(source, game, build);
     } else if (era === 'raw') {
         cache = await importRaw(source, game, build);
+    } else if (era === 'earlyrs2') {
+        cache = await importEarlyRs2(source, game, build);
     }
 
     if (cache) {

@@ -65,6 +65,7 @@ export type data_raw = {
     crc: number;
     bytes: Buffer;
     len: number;
+    timestamp: Timestamp | null;
 };
 export type data_versioned = {
     game_id: number;

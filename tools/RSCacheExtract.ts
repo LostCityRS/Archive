@@ -196,6 +196,6 @@ if (args.length < 1) {
     process.exit(1);
 }
 
-rsCacheExtract(args[0], path.dirname(args[0]));
+rsCacheExtract(args[0], `${path.dirname(args[0])}/${Date.now()}`);
 
 process.exit(0);

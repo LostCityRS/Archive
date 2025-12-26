@@ -7,6 +7,7 @@ import Jagfile from '#/io/Jagfile.js';
 import Packet from '#/io/Packet.js';
 import Js5LocalDiskCache from '#/js5/Js5LocalDiskCache.js';
 import Js5Index from '#/js5/Js5Index.js';
+import { fromBase37 } from '#/util/JString.js';
 
 async function createCache(gameName: string, build: string, versioned: boolean) {
     const game = await db
@@ -382,6 +383,94 @@ export async function importRaw(source: string, gameName: string, build: string)
                 len: buf.length
             })
             .execute();
+    }
+
+    await recalculateStats(cache.id);
+    return cache;
+}
+
+export async function importEarlyRs2(source: string, gameName: string, build: string, force?: string) {
+    const game = await db
+        .selectFrom('game')
+        .selectAll()
+        .where('name', '=', gameName)
+        .executeTakeFirstOrThrow();
+
+    let cache = await db
+        .selectFrom('cache')
+        .select(['id', 'game_id'])
+        .where('game_id', '=', game.id)
+        .where('build', '=', build)
+        .executeTakeFirst();
+
+    if (typeof cache === 'undefined') {
+        cache = await createCache(gameName, build, false);
+    }
+
+    const files = fs.readdirSync(source, { withFileTypes: true });
+    for (const file of files) {
+        if (file.isDirectory()) {
+            continue;
+        }
+
+        const realName = fromBase37(BigInt(file.name));
+        if (
+            realName === 'invalid_name' ||
+            realName === 'runescape_ja'
+        ) {
+            continue;
+        }
+
+        const buf = fs.readFileSync(`${source}/${file.name}`);
+        const crc = Packet.getcrc(buf, 0, buf.length);
+        const mtime = fs.statSync(`${source}/${file.name}`).mtime;
+
+        await db
+            .insertInto('cache_raw')
+            .ignore()
+            .values({
+                cache_id: cache.id,
+                name: realName,
+                crc
+            })
+            .execute();
+
+        try {
+            await db
+                .insertInto('data_raw')
+                .values({
+                    game_id: cache.game_id,
+                    name: realName,
+                    crc,
+                    bytes: Buffer.from(buf),
+                    len: buf.length,
+                    timestamp: mtime < new Date('2015-01-01') ? mtime : null
+                })
+                .execute();
+        } catch (err: any) {
+            if (err.errno !== 1062) {
+                console.log(err);
+                process.exit(1);
+            }
+
+            const old = await db
+                .selectFrom('data_raw')
+                .select('timestamp')
+                .where('name', '=', realName)
+                .where('crc', '=', crc)
+                .executeTakeFirstOrThrow();
+
+            if (old.timestamp === null || old.timestamp > mtime) {
+                await db
+                    .updateTable('data_raw')
+                    .set({
+                        timestamp: mtime
+                    })
+                    .where('name', '=', realName)
+                    .where('crc', '=', crc)
+                    .execute();
+            }
+        }
     }
 
     await recalculateStats(cache.id);

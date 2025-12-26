@@ -116,7 +116,7 @@ async function* getRawDataZip(cacheId: number, gameId: number) {
                 .onRef('data_raw.crc', '=', 'cache_raw.crc')
         )
         .where('cache_id', '=', cacheId)
-        .select(['cache_raw.name', 'data_raw.bytes'])
+        .select(['cache_raw.name', 'data_raw.bytes', 'data_raw.timestamp'])
         .orderBy('cache_raw.name', 'asc')
         .stream();
 
@@ -128,7 +128,9 @@ async function* getRawDataZip(cacheId: number, gameId: number) {
         yield {
             name: data.name,
             size: data.bytes.length,
-            input: new Uint8Array(data.bytes)
+            input: new Uint8Array(data.bytes),
+            // zip lib expects "undefined" not null
+            lastModified: data.timestamp ?? undefined
         };
     }
 }
