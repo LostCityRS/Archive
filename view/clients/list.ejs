@@ -65,7 +65,8 @@
 						<% if (game.newspost_url !== null && client.newspost !== null) { %>
 						<a class="hover:text-gray-300"
 							 href="<%= game.newspost_url%><%= encodeURI(client.newspost) %>"
-							 rel="noreferrer"><%= client.newspost %></a>
+							 rel="noreferrer"
+							 target="_blank"><%= client.newspost %></a>
 						<% } else { %>
 						<%= client.newspost ?? '-' %>
 						<% } %>

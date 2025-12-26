@@ -63,7 +63,8 @@
 							<% if (game.newspost_url !== null && cache.newspost !== null) { %>
 							<a class="hover:text-gray-300"
 								 href="<%= game.newspost_url%><%= encodeURI(cache.newspost) %>"
-								 rel="noreferrer"><%= cache.newspost %></a>
+								 rel="noreferrer"
+								 target="_blank"><%= cache.newspost %></a>
 							<% } else { %>
 							<%= cache.newspost ?? '-' %>
 							<% } %>
