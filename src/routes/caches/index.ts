@@ -185,12 +185,12 @@ export default async function (app: FastifyInstance) {
         // Get max archived count for filter UI
         const archivedMaxRow = await cacheExecuteTakeFirst(`caches_archived_max`, db
             .selectFrom(
-            db.selectFrom('cache')
-                .select(db.fn.count('id').as('count'))
-                .groupBy('game_id')
-                .as('t')
-            )
-            .select(db.fn.max('count').as('max'))
+                db.selectFrom('cache')
+                    .select(db.fn.count('id').as('count'))
+                    .groupBy('game_id')
+                    .as('t')
+                )
+            .select(eb => eb.fn.max('count').as('max'))
         );
         const archivedMaxRowCount = archivedMaxRow?.max ?? 0;
 
