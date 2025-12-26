@@ -2,6 +2,7 @@ import fs from 'fs';
 
 import { db } from '#/db/query.js';
 import Packet from '#/io/Packet.js';
+import { fromBase37 } from '#/util/JString.js';
 
 const args = process.argv.slice(2);
 
@@ -23,18 +24,33 @@ for (const file of files) {
         continue;
     }
 
+    let name37 = 0n;
+    try {
+        name37 = BigInt(file.name);
+    } catch (err) {
+        continue;
+    }
+
+    const realName = fromBase37(name37);
+    if (
+        realName === 'invalid_name' ||
+        realName === 'runescape_ja'
+    ) {
+        continue;
+    }
+
     const buf = fs.readFileSync(`${dirName}/${file.name}`);
     const crc = Packet.getcrc(buf, 0, buf.length);
     const mtime = fs.statSync(`${dirName}/${file.name}`).mtime;
 
-    console.log(file.name, mtime, buf.length, crc);
+    console.log(realName, mtime, buf.length, crc);
 
     try {
         await db
             .insertInto('data_raw')
             .values({
                 game_id: game.id,
-                name: file.name,
+                name: realName,
                 crc,
                 bytes: Buffer.from(buf),
                 len: buf.length,
@@ -51,7 +67,7 @@ for (const file of files) {
             const old = await db
                 .selectFrom('data_raw')
                 .select('timestamp')
-                .where('name', '=', file.name)
+                .where('name', '=', realName)
                 .where('crc', '=', crc)
                 .executeTakeFirstOrThrow();
 
@@ -62,7 +78,7 @@ for (const file of files) {
                         timestamp: mtime
                     })
                     .where('game_id', '=', game.id)
-                    .where('name', '=', file.name)
+                    .where('name', '=', realName)
                     .where('crc', '=', crc)
                     .execute();
             }
