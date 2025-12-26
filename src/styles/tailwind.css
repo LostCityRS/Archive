@@ -69,3 +69,26 @@
     @apply flex flex-col min-h-screen;
   }
 }
+
+#archived {
+  background-color: var(--color-siam-800);
+}
+
+#archived .range-slider__range {
+  background-color: var(--color-siam-400);
+}
+
+#archived .range-slider__thumb {
+  background-color: var(--color-siam-400);
+  @apply transform -translate-x-1/2 -translate-y-1/2 transition-transform duration-300;
+  transform-origin: center;
+}
+
+#archived .range-slider__thumb[data-active] {
+  @apply scale-125;
+}
+
+#archived .range-slider__range[data-active] {
+  @apply h-4;
+}
+
