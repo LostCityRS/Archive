@@ -10,69 +10,166 @@
 
 	<%- include('_partial/layout/primary_open'); %>
 
-	<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
-		<table class="table table-zebra">
-			<thead>
-				<tr class="bg-base-100">
-					<th scope="col"
-							class="font-medium!">
-						<%- include('_component/sort_header', { 
-							sort: 'name', 
-							label: 'Game', 
-							filters: filters, 
-							filtersQuery: buildQueryString(filters, ['sort', 'order']), 
-							defaultSort: '', 
-							defaultOrder: '' }) 
-						%>
-					</th>
-					<th scope="col"
-							class="font-medium!">
-						<%- include('_component/sort_header', { 
-							sort: 'count', 
-							label: 'Archived', 
-							filters: filters, 
-							filtersQuery: buildQueryString(filters, ['sort', 'order']), 
-							defaultSort: '', 
-							defaultOrder: '' }) 
-						%>
-					</th>
-					<th scope="col">
-					</th>
-				</tr>
-			</thead>
-			<tbody>
-				<% for (game of games) { %>
-				<tr>
-					<td class="w-0 whitespace-nowrap">
-						<a class="hover:text-gray-300"
-							 href="/caches/list/<%= game.name %>">
-							<%= game.display_name %>
-						</a>
-					</td>
-					<td>
-						<a class="hover:text-gray-300"
-							 href="/caches/list/<%= game.name %>"><%= game.count %></a>
-					</td>
-					<td class="w-0 whitespace-nowrap">
-						<a class="btn btn-sm btn-info"
-							 href="/caches/list/<%= game.name %>">See All</a>
-					</td>
-				</tr>
-				<% } %>
-			</tbody>
-		</table>
+	<div class="grid grid-cols-4 gap-6">
+		<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
+			<% const hasFilters = filters && (filters.game || filters.archivedMin != 0 || filters.archivedMax != filters.archivedMaxRow); %>
 
-		<%- include('_component/pagination', { 
-			pagination,
-			filters: filters,
-			filtersQuery: buildQueryString(filters, ['page'])
-		}); %>
+			<details class="collapse collapse-arrow md:hidden"
+							 <%= hasFilters ? 'open' : '' %>>
+				<summary class="collapse-title flex items-center justify-between gap-2 cursor-pointer bg-base-300 py-2">
+					<h2 class="text-lg text-harvest-gold-300 font-medium">Filters</h2>
+
+					<% if (hasFilters) { %>
+					<a class="btn btn-sm btn-ghost"
+						 href="/caches/list">
+						<i data-lucide="x"
+							 class="size-4"></i>
+						Clear
+					</a>
+					<% } %>
+				</summary>
+
+				<div class="collapse-content bg-base-300">
+					<%- include('./_partial/index_filters', { filters }); %>
+				</div>
+			</details>
+
+			<div class="hidden md:block">
+				<div class="flex items-center justify-between gap-2 mb-3">
+					<h2 class="text-2xl text-harvest-gold-300 font-medium">Filters</h2>
+
+					<% if (hasFilters) { %>
+					<a class="btn btn-sm btn-ghost"
+						 href="/caches/list">
+						<i data-lucide="x"
+							 class="size-4"></i>
+						Clear
+					</a>
+					<% } %>
+				</div>
+
+				<div class="card card-body flex-initial bg-base-300">
+					<%- include('./_partial/index_filters', { filters }); %>
+				</div>
+			</div>
+		</div>
+
+		<div class="col-span-4 md:col-span-3 flex flex-col gap-3">
+			<% if (hasFilters) { %>
+			<div class="flex flex-wrap gap-2">
+				<% if (filters.game) { %>
+				<a href="/caches/list?<%= buildQueryString(filters, ['page', 'game']) %>&limit=<%= pagination.limit %>"
+					 class="btn btn-info btn-sm h-7 pr-2">
+					Game: <%= filters.game %>
+
+					<i data-lucide="x"
+						 class="size-4"></i>
+				</a>
+				<% } %>
+
+				<% if (filters.archivedMin != 0 || filters.archivedMax != filters.archivedMaxRow) { %>
+
+				<a href="/caches/list?<%= buildQueryString(filters, ['page', 'archivedMin', 'archivedMax']) %>&limit=<%= pagination.limit %>"
+					 class="btn btn-info btn-sm h-7 pr-2">
+					Archived: <%= filters.archivedMin %> to <%= filters.archivedMax %>
+
+					<i data-lucide="x"
+						 class="size-4"></i>
+				</a>
+				<% } %>
+			</div>
+			<% } %>
+
+			<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
+				<table class="table table-zebra">
+					<thead>
+						<tr class="bg-base-100">
+							<th scope="col"
+									class="font-medium!">
+								<%- include('_component/sort_header', { 
+									sort: 'name', 
+									label: 'Game', 
+									filters: filters, 
+									filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+									defaultSort: '', 
+									defaultOrder: '' }) 
+								%>
+							</th>
+							<th scope="col"
+									class="font-medium!">
+								<%- include('_component/sort_header', { 
+									sort: 'count', 
+									label: 'Archived', 
+									filters: filters, 
+									filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+									defaultSort: '', 
+									defaultOrder: '' }) 
+								%>
+							</th>
+							<th scope="col">
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+						<% for (game of games) { %>
+						<tr>
+							<td class="w-0 whitespace-nowrap">
+								<a class="hover:text-gray-300"
+									 href="/caches/list/<%= game.name %>">
+									<%= game.display_name %>
+								</a>
+							</td>
+							<td>
+								<a class="hover:text-gray-300"
+									 href="/caches/list/<%= game.name %>"><%= game.count %></a>
+							</td>
+							<td class="w-0 whitespace-nowrap">
+								<a class="btn btn-sm btn-info"
+									 href="/caches/list/<%= game.name %>">See All</a>
+							</td>
+						</tr>
+						<% } %>
+					</tbody>
+				</table>
+
+				<%- include('_component/pagination', { 
+					pagination,
+					filters: filters,
+					filtersQuery: buildQueryString(filters, ['page'])
+				}); %>
+			</div>
+		</div>
 	</div>
 
 	<%- include('_partial/layout/primary_close'); %>
 
 	<%- include('_partial/footer', { timeTaken: stats.timeTaken }); %>
 </body>
+
+<script src="/js/range-slider-input.min.js"></script>
+<script>
+	document.querySelectorAll('#archived').forEach(el => {
+		rangeSlider(el, {
+			min: 0,
+			max: <%- filters.archivedMaxRow %>,
+			value: [<%- filters.archivedMin %>, <%- filters.archivedMax %>],
+			onInput: (values) => {
+				document.querySelectorAll('#archivedMin').forEach(archivedMin => {
+					archivedMin.value = values[0];
+				});
+				document.querySelectorAll('#archivedMax').forEach(archivedMax => {
+					archivedMax.value = values[1];
+				});
+				document.querySelectorAll('#archivedMinLabel').forEach(archivedMinLabel => {
+					archivedMinLabel.textContent = values[0];
+				});
+				document.querySelectorAll('#archivedMaxLabel').forEach(archivedMaxLabel => {
+					archivedMaxLabel.textContent = values[1];
+				});
+			}
+		});
+	});
+</script>
 
 <%- include('_partial/footer_scripts'); %>
 

@@ -1,0 +1,77 @@
+<form method="get"
+			action="/caches/list">
+	<div class="flex flex-col gap-6 pt-3 md:pt-0">
+		<div>
+
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="game">
+				Game
+			</label>
+
+			<input type="text"
+						 class="input"
+						 name="game"
+						 id="game"
+						 placeholder="Search..."
+						 value="<%= filters.game || '' %>">
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="archivedMin">
+				Archived
+			</label>
+
+			<div class="flex justify-between mb-2">
+				<span class="text-sm text-gray-400">
+					Min:
+					<span id="archivedMinLabel">
+						<%- filters.archivedMin %>
+					</span>
+				</span>
+
+				<span class="text-sm text-gray-400">
+					Max:
+					<span id="archivedMaxLabel">
+						<%- filters.archivedMax %>
+					</span>
+				</span>
+			</div>
+
+			<div id="archived"></div>
+
+			<input type="hidden"
+						 name="archivedMin"
+						 id="archivedMin"
+						 value="<%- filters.archivedMin %>" />
+
+			<input type="hidden"
+						 name="archivedMax"
+						 id="archivedMax"
+						 value="<%- filters.archivedMax %>" />
+		</div>
+
+		<% if (filters && filters.sort) { %>
+		<input type="hidden"
+					 name="sort"
+					 value="<%= filters.sort || '' %>">
+		<% } %>
+
+		<% if (filters && filters.order) { %>
+		<input type="hidden"
+					 name="order"
+					 value="<%= filters.order %>">
+		<% } %>
+
+		<input type="hidden"
+					 name="limit"
+					 value="<%= pagination.limit || '' %>">
+
+		<button type="submit"
+						class="btn btn-success mt-3">
+			Apply Filters
+		</button>
+	</div>
+</form>

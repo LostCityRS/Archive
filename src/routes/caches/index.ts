@@ -137,7 +137,23 @@ export default async function (app: FastifyInstance) {
     app.get('/list', async (req, reply) => {
         const start = Date.now();
 
-        const { page: pageParam = "1", limit: limitParam = "25", sort, order } = req.query as { page?: string, limit?: string, sort?: "name" | "count", order?: "asc" | "desc" };
+        const { 
+            page: pageParam = "1", 
+            limit: limitParam = "25", 
+            sort, 
+            order,
+            game,
+            archivedMin,
+            archivedMax
+        } = req.query as { 
+            page?: string, 
+            limit?: string, 
+            sort?: "name" | "count", 
+            order?: "asc" | "desc",
+            game?: string,
+            archivedMin?: string,
+            archivedMax?: string
+        };
         const page = parseInt(pageParam), limit = parseInt(limitParam);
 
         let baseQuery = db
@@ -149,6 +165,34 @@ export default async function (app: FastifyInstance) {
             )
             .select(db.fn.count('cache.id').as('count'))
             .groupBy('game.id');
+
+        // Filter by game name
+        if (game && game.trim() !== '') {
+            const term = `%${game.trim()}%`;
+            baseQuery = baseQuery.where(({ eb }) =>
+                eb('game.name', 'like', term).or('game.display_name', 'like', term),
+            );
+        }
+
+        // Filter by archived count
+        if (archivedMin && !isNaN(parseInt(archivedMin))) {
+            baseQuery = baseQuery.having(db.fn.count('cache.id'), '>=', parseInt(archivedMin));
+        }
+        if (archivedMax && !isNaN(parseInt(archivedMax))) {
+            baseQuery = baseQuery.having(db.fn.count('cache.id'), '<=', parseInt(archivedMax));
+        }
+
+        // Get max archived count for filter UI
+        const archivedMaxRow = await cacheExecuteTakeFirst(`caches_archived_max`, db
+            .selectFrom(
+            db.selectFrom('cache')
+                .select(db.fn.count('id').as('count'))
+                .groupBy('game_id')
+                .as('t')
+            )
+            .select(db.fn.max('count').as('max'))
+        );
+        const archivedMaxRowCount = archivedMaxRow?.max ?? 0;
 
         if (sort === undefined) {
             baseQuery = baseQuery.orderBy(
@@ -163,20 +207,28 @@ export default async function (app: FastifyInstance) {
             baseQuery = baseQuery.orderBy(sort, order)
         }
 
-        const games = await cacheExecute(`caches_list_${page}_limit_${limit}`,
+        const cacheKey = [
+            'caches_list',
+            `page_${page}`,
+            `limit_${limit}`,
+            `sort_${sort || 'default'}`,
+            `order_${order || 'asc'}`,
+            game ? `game_${game}` : '',
+            archivedMin !== undefined ? `amin_${archivedMin}` : '',
+            archivedMax !== undefined ? `amax_${archivedMax}` : '',
+        ].join('_');
+
+        const games = await cacheExecute(cacheKey,
             baseQuery.limit(limit).offset((page - 1) * limit)
         );
 
-        const totalRecords = await cacheExecuteTakeFirst('caches_list_totalrecords',
-            db.selectFrom('game').select(({ fn }) => fn.count('game.id').as('count'))
+        const totalRecords = await cacheExecuteTakeFirst(`${cacheKey}_totalrecords`,
+            db.selectFrom(baseQuery.as('g'))
+                .select(db.fn.countAll().as('count'))
         );
         const totalPages = totalRecords ? Math.ceil(totalRecords.count / limit) : 0;
 
         const timeTaken = Date.now() - start;
-
-        const filters: Record<string, any> = {};
-        if (sort !== undefined) filters.sort = sort;
-        if (order !== undefined) filters.order = order;
 
         return reply.view('caches/index', {
             buildQueryString,
@@ -190,7 +242,14 @@ export default async function (app: FastifyInstance) {
                 totalRecords: totalRecords.count,
                 totalPages
             },
-            filters,
+            filters: {
+                ...(sort !== undefined && { sort }),
+                ...(order !== undefined && { order }),
+                ...(game && { game }),
+                archivedMaxRow: [archivedMaxRowCount],
+                archivedMin: archivedMin !== undefined ? parseInt(archivedMin, 10) : 0,
+                archivedMax: archivedMax !== undefined ? parseInt(archivedMax, 10) : archivedMaxRowCount
+            },
             title: 'Caches',
             icon: 'database-zap',
         });
