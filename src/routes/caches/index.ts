@@ -329,7 +329,7 @@ export default async function (app: FastifyInstance) {
                         .onRef('data_raw.name', '=', 'cache_raw.name')
                         .onRef('data_raw.crc', '=', 'cache_raw.crc')
                 )
-                .select(['name', 'crc', 'data_raw.len', 'data_raw.timestamp', 'data_raw.timestamp2'])
+                .select(['cache_raw.name', 'cache_raw.crc', 'data_raw.len', 'data_raw.timestamp', 'data_raw.timestamp2'])
                 .where('cache_id', '=', cache.id)
             );
         }
