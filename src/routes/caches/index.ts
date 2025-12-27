@@ -322,7 +322,6 @@ export default async function (app: FastifyInstance) {
         if (!cache.versioned) {
             data = await cacheExecute(`cache_raw_${id}`, db
                 .selectFrom('cache_raw')
-                .selectAll()
                 .leftJoin(
                     'data_raw',
                     (join) => join
@@ -330,7 +329,7 @@ export default async function (app: FastifyInstance) {
                         .onRef('data_raw.name', '=', 'cache_raw.name')
                         .onRef('data_raw.crc', '=', 'cache_raw.crc')
                 )
-                .select(['data_raw.name', 'data_raw.crc', 'data_raw.len'])
+                .select(['name', 'crc', 'data_raw.len', 'data_raw.timestamp', 'data_raw.timestamp2'])
                 .where('cache_id', '=', cache.id)
             );
         }
