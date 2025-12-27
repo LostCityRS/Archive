@@ -114,15 +114,15 @@
 					<% if (file.len !== null) { %>
 
 					<%- include('_component/file_download', {
-									icon: 'file',
-									name: file.name,
-									href: `/caches/${cache.id}/get/${file.name}`,
-									crc: file.crc,
-									timestamp: file.timestamp,
-									fileSize: file.len,
-									size: 'sm'
-									}) 
-								%>
+						icon: 'file',
+						name: file.name,
+						href: `/caches/${cache.id}/get/${file.name}`,
+						crc: file.crc,
+						timestamp: file.timestamp,
+						timestamp2: file.timestamp2,
+						fileSize: file.len,
+						size: 'sm'
+					}) %>
 
 					<% } %>
 					<% } %>
