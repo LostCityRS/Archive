@@ -21,15 +21,19 @@
 				<%= name %>
 			</span>
 
-			<% if (typeof crc !== 'undefined' && crc) { %>
-			<span class="text-[0.7rem] text-siam-200 leading-snug">
-				CRC: <%= crc %>
+			<% if (typeof timestamp !== 'undefined' && timestamp) { %>
+			<span class="text-[0.75rem] text-siam-200 leading-snug">
+				First Seen: <%= timestamp.toISOString().replace('T', ' ').split('.')[0] %>
+				<% if (typeof timestamp2 !== 'undefined' && timestamp2 && timestamp.getTime() !== timestamp2.getTime()) { %>
+					<br>
+					Last Seen: <%= timestamp2.toISOString().replace('T', ' ').split('.')[0] %>
+				<% } %>
 			</span>
 			<% } %>
 
-			<% if (typeof timestamp !== 'undefined' && timestamp) { %>
+			<% if (typeof crc !== 'undefined' && crc) { %>
 			<span class="text-[0.7rem] text-siam-200 leading-snug">
-				Timestamp: <%= timestamp.toISOString().replace('T', ' ').split('.')[0] %>
+				CRC: <%= crc %>
 			</span>
 			<% } %>
 		</div>

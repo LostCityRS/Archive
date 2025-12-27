@@ -46,7 +46,10 @@ model data_raw {
     bytes Bytes  @db.MediumBlob
     len   Int    @db.UnsignedInt
 
+    // first seen
     timestamp DateTime?
+    // last seen
+    timestamp2 DateTime?
 
     @@id([game_id, name, crc])
 }

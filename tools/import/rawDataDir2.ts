@@ -63,10 +63,11 @@ for (const file of files) {
             process.exit(1);
         }
 
-        if (mtime < new Date('2015-01-01')) {
+        if (mtime < new Date('2008-01-01')) {
             const old = await db
                 .selectFrom('data_raw')
-                .select('timestamp')
+                .select(['timestamp', 'timestamp2'])
+                .where('game_id', '=', game.id)
                 .where('name', '=', realName)
                 .where('crc', '=', crc)
                 .executeTakeFirstOrThrow();
@@ -76,6 +77,18 @@ for (const file of files) {
                     .updateTable('data_raw')
                     .set({
                         timestamp: mtime
+                    })
+                    .where('game_id', '=', game.id)
+                    .where('name', '=', realName)
+                    .where('crc', '=', crc)
+                    .execute();
+            }
+
+            if (old.timestamp && old.timestamp.getTime() !== mtime.getTime() && (old.timestamp2 === null || old.timestamp2 < mtime)) {
+                await db
+                    .updateTable('data_raw')
+                    .set({
+                        timestamp2: mtime
                     })
                     .where('game_id', '=', game.id)
                     .where('name', '=', realName)

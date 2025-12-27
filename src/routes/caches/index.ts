@@ -713,7 +713,7 @@ export default async function (app: FastifyInstance) {
 
         const data = await db
             .selectFrom('data_raw')
-            .select(['name', 'crc', 'len', 'timestamp'])
+            .select(['name', 'crc', 'len', 'timestamp', 'timestamp2'])
             .where('game_id', '=', game.id)
             .orderBy('name', 'asc')
             .orderBy('timestamp', 'asc')
