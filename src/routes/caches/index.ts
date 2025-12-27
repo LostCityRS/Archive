@@ -10,7 +10,6 @@ import FileStreamAsync from '#/io/FileStreamAsync.js';
 
 import Js5LocalDiskCacheAsync from '#/js5/Js5LocalDiskCacheAsync.js';
 import { sql } from 'kysely';
-import { realRawNames } from '#/util/FileNames.js';
 
 async function getCache(id: number) {
     return cacheExecuteTakeFirstOrThrow(`cache_${id}`, db
@@ -340,7 +339,6 @@ export default async function (app: FastifyInstance) {
             cache,
             clients,
             data,
-            realRawNames,
             stats: {
                 timeTaken
             },
@@ -725,7 +723,6 @@ export default async function (app: FastifyInstance) {
             title: `All ${game.display_name} Cache Files`,
             game,
             data,
-            realRawNames,
             stats: {
                 timeTaken
             }

@@ -27,8 +27,7 @@
 
 					<%- include('_component/file_download', {
 						icon: 'file',
-						name: realRawNames(file.name),
-						title: file.name,
+						name: file.name,
 						href: `/caches/files/${game.name}/${file.name}/${file.crc}`,
 						crc: file.crc,
 						timestamp: file.timestamp,

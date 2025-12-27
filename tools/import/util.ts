@@ -8,6 +8,7 @@ import Packet from '#/io/Packet.js';
 import Js5LocalDiskCache from '#/js5/Js5LocalDiskCache.js';
 import Js5Index from '#/js5/Js5Index.js';
 import { fromBase37 } from '#/util/JString.js';
+import { getRealDecodedName, getRealEncodedName } from '#/util/FileNames.js';
 
 async function createCache(gameName: string, build: string, versioned: boolean) {
     const game = await db
@@ -420,13 +421,21 @@ export async function importEarlyRs2(source: string, gameName: string, build: st
             continue;
         }
 
-        const realName = fromBase37(name37);
-        if (
-            realName === 'invalid_name' ||
-            realName === 'runescape_ja'
-        ) {
+        let realName = fromBase37(name37);
+        if (realName === 'runescape_ja') {
             continue;
         }
+
+        if (realName === 'invalid_name') {
+            // some really cannot be decoded
+            realName = getRealEncodedName(file.name);
+
+            if (realName === 'invalid_name') {
+                continue;
+            }
+        }
+
+        realName = getRealDecodedName(realName);
 
         const buf = fs.readFileSync(`${source}/${file.name}`);
         const crc = Packet.getcrc(buf, 0, buf.length);
