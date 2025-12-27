@@ -115,7 +115,8 @@
 
 					<%- include('_component/file_download', {
 						icon: 'file',
-						name: file.name,
+						name: realRawNames(file.name),
+						title: file.name,
 						href: `/caches/${cache.id}/get/${file.name}`,
 						crc: file.crc,
 						timestamp: file.timestamp,
