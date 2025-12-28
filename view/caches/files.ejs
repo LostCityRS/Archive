@@ -12,42 +12,228 @@
 
 	<div class="flex flex-col gap-6">
 		<div class="grid grid-cols-4 gap-4">
-			<div class="col-span-4 md:col-span-1 flex flex-col gap-3">
+			<div class="col-span-4 lg:col-span-1 flex flex-col gap-3">
+				<% const hasFilters = filters && (filters.name || filters.crc || filters.timestampMin || filters.timestampMax || filters.timestamp2Min || filters.timestamp2Max || filters.lenMin != 0 || filters.lenMax != filters.lenMaxRow); %>
+
+				<details class="collapse collapse-arrow lg:hidden"
+								 <%= hasFilters ? 'open' : '' %>>
+					<summary class="collapse-title flex items-center justify-between gap-2 cursor-pointer bg-base-300 py-2">
+						<h2 class="text-lg text-harvest-gold-300 font-medium">Filters</h2>
+
+						<% if (hasFilters) { %>
+						<a class="btn btn-sm btn-ghost"
+							 href="/caches/files/<%= game.name %>">
+							<i data-lucide="x"
+								 class="size-4"></i>
+							Clear
+						</a>
+						<% } %>
+					</summary>
+
+					<div class="collapse-content bg-base-300">
+						<%- include('./_partial/files_filters', { filters }); %>
+					</div>
+				</details>
+
+				<div class="hidden lg:block">
+					<div class="flex items-center justify-between gap-2 mb-3">
+						<h2 class="text-2xl text-harvest-gold-300 font-medium">Filters</h2>
+
+						<% if (hasFilters) { %>
+						<a class="btn btn-sm btn-ghost"
+							 href="/caches/files/<%= game.name %>">
+							<i data-lucide="x"
+								 class="size-4"></i>
+							Clear
+						</a>
+						<% } %>
+					</div>
+
+					<div class="card card-body flex-initial bg-base-300">
+						<%- include('./_partial/files_filters', { filters }); %>
+					</div>
+				</div>
 			</div>
 
 			<div class="col-span-4 md:col-span-3 flex flex-col gap-6">
+				<% if (hasFilters) { %>
+				<div class="flex flex-wrap gap-2">
+					<% if (filters.name) { %>
+					<a href="/caches/files/<%= game.name %>?<%= buildQueryString(filters, ['page', 'name']) %>&limit=<%= pagination.limit %>"
+						 class="btn btn-info btn-sm h-7 pr-2">
+						Name: <%= filters.name %>
 
-				<div class="flex flex-col gap-3">
-					<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
-
-					<% if (data.length > 0) { %>
-
-					<% for (const file of data) { %>
-					<% if (file.len !== null) { %>
-
-					<%- include('_component/file_download', {
-						icon: 'file',
-						name: file.name,
-						href: `/caches/files/${game.name}/${file.name}/${file.crc}`,
-						crc: file.crc,
-						timestamp: file.timestamp,
-						timestamp2: file.timestamp2,
-						fileSize: file.len,
-						size: 'sm'
-					}) %>
-
-					<% } %>
-					<% } %>
-					<% } else { %>
-
-					<div class="text-siam-300">
-						No files are available for download in this cache.
-					</div>
-
+						<i data-lucide="x"
+							 class="size-4"></i>
+					</a>
 					<% } %>
 
+					<% if (filters.crc) { %>
+					<a href="/caches/files/<%= game.name %>?<%= buildQueryString(filters, ['page', 'crc']) %>&limit=<%= pagination.limit %>"
+						 class="btn btn-info btn-sm h-7 pr-2">
+						CRC: <%= filters.crc %>
+
+						<i data-lucide="x"
+							 class="size-4"></i>
+					</a>
+					<% } %>
+
+					<% if (filters.timestampMin || filters.timestampMax) { %>
+					<a href="/caches/files/<%= game.name %>?<%= buildQueryString(filters, ['page', 'timestampMin', 'timestampMax']) %>&limit=<%= pagination.limit %>"
+						 class="btn btn-info btn-sm h-7 pr-2">
+						<% if (filters.timestampMin && filters.timestampMax) { %>
+						First Seen: <%= filters.timestampMin %> - <%= filters.timestampMax %>
+						<% } else if (filters.timestampMin) { %>
+						First Seen: from <%= filters.timestampMin %>
+						<% } else if (filters.timestampMax) { %>
+						First Seen: until <%= filters.timestampMax %>
+						<% } %>
+
+						<i data-lucide="x"
+							 class="size-4"></i>
+					</a>
+					<% } %>
+
+					<% if (filters.timestamp2Min || filters.timestamp2Max) { %>
+					<a href="/caches/files/<%= game.name %>?<%= buildQueryString(filters, ['page', 'timestamp2Min', 'timestamp2Max']) %>&limit=<%= pagination.limit %>"
+						 class="btn btn-info btn-sm h-7 pr-2">
+						<% if (filters.timestamp2Min && filters.timestamp2Max) { %>
+						Last Seen: <%= filters.timestamp2Min %> - <%= filters.timestamp2Max %>
+						<% } else if (filters.timestamp2Min) { %>
+						Last Seen: from <%= filters.timestamp2Min %>
+						<% } else if (filters.timestamp2Max) { %>
+						Last Seen: until <%= filters.timestamp2Max %>
+						<% } %>
+
+						<i data-lucide="x"
+							 class="size-4"></i>
+					</a>
+					<% } %>
+
+					<% if (filters.lenMin != 0 || filters.lenMax != filters.lenMaxRow) { %>
+					<a href="/caches/list?<%= buildQueryString(filters, ['page', 'lenMin', 'lenMax']) %>&limit=<%= pagination.limit %>"
+						 class="btn btn-info btn-sm h-7 pr-2">
+						File Size: <%= filters.lenMin %> to <%= filters.lenMax %>
+
+						<i data-lucide="x"
+							 class="size-4"></i>
+					</a>
+					<% } %>
 				</div>
+				<% } %>
 
+				<div class="relative overflow-x-auto rounded-field border border-base-content/5 bg-base-300">
+					<table class="table table-zebra">
+						<thead>
+							<tr class="bg-base-100">
+								<th scope="col"
+										class="font-medium!">
+									<%- include('_component/sort_header', { 
+										sort: 'name', 
+										label: 'File Name', 
+										filters: filters, 
+										filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+										defaultSort: 'name', 
+										defaultOrder: 'asc' }) 
+									%>
+								</th>
+								<th scope="col"
+										class="font-medium!">
+									<%- include('_component/sort_header', { 
+										sort: 'crc', 
+										label: 'CRC', 
+										filters: filters, 
+										filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+										defaultSort: 'name', 
+										defaultOrder: 'asc' }) 
+									%>
+								</th>
+								<th scope="col"
+										class="font-medium!">
+									<%- include('_component/sort_header', { 
+										sort: 'timestamp', 
+										label: 'First Seen', 
+										filters: filters, 
+										filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+										defaultSort: 'name', 
+										defaultOrder: 'asc' }) 
+									%>
+								</th>
+								<th scope="col"
+										class="font-medium!">
+									<%- include('_component/sort_header', { 
+										sort: 'timestamp2', 
+										label: 'Last Seen', 
+										filters: filters, 
+										filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+										defaultSort: 'name', 
+										defaultOrder: 'asc' }) 
+									%>
+								</th>
+								<th scope="col"
+										class="font-medium!">
+									<%- include('_component/sort_header', { 
+										sort: 'len', 
+										label: 'File Size', 
+										filters: filters, 
+										filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+										defaultSort: 'name', 
+										defaultOrder: 'asc' }) 
+									%>
+								</th>
+								<th scope="col">
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							<% for (file of data) { %>
+							<tr>
+								<td class="w-0 whitespace-nowrap">
+									<i data-lucide="file"
+										 class="size-5 mr-1 inline align-text-bottom text-siam-300"></i>
+									<%= file.name %>
+								</td>
+								<td>
+									<%= file.crc %>
+								</td>
+								<td class="w-0 whitespace-nowrap">
+									<% if (file.timestamp != undefined) { %>
+									<%= file.timestamp.toISOString().replace('T', ' ').split('.')[0] %>
+									<% } else { %>
+									-
+									<% } %>
+								</td>
+								<td class="w-0 whitespace-nowrap">
+									<% if (file.timestamp2 != undefined) { %>
+									<%= file.timestamp2.toISOString().replace('T', ' ').split('.')[0] %>
+									<% } else { %>
+									-
+									<% } %>
+								</td>
+								<td class="w-0 whitespace-nowrap">
+									<% if (file.len !== null) { %>
+									<%- include('_component/format_size', { bytes: file.len }) %>
+									<% } %>
+								</td>
+								<td class="w-0 whitespace-nowrap">
+									<a class="btn btn-sm btn-success"
+										 href="/caches/files/<%= game.name %>/<%= file.name %>/<%= file.crc %>">
+										<i data-lucide="download"
+											 class="size-4"></i>
+										Download
+									</a>
+								</td>
+							</tr>
+							<% } %>
+						</tbody>
+					</table>
+
+					<%- include('_component/pagination', { 
+					pagination,
+					filters: filters,
+					filtersQuery: buildQueryString(filters, ['page'])
+				}); %>
+				</div>
 			</div>
 		</div>
 	</div>
@@ -56,6 +242,31 @@
 
 	<%- include('_partial/footer', { timeTaken: stats.timeTaken }); %>
 </body>
+
+<script src="/js/range-slider-input.min.js"></script>
+<script>
+	document.querySelectorAll('#len').forEach(el => {
+		rangeSlider(el, {
+			min: 0,
+			max: <%- filters.lenMaxRow %>,
+			value: [<%- filters.lenMin %>, <%- filters.lenMax %>],
+			onInput: (values) => {
+				document.querySelectorAll('#lenMin').forEach(lenMin => {
+					lenMin.value = values[0];
+				});
+				document.querySelectorAll('#lenMax').forEach(lenMax => {
+					lenMax.value = values[1];
+				});
+				document.querySelectorAll('#lenMinLabel').forEach(lenMinLabel => {
+					lenMinLabel.textContent = values[0];
+				});
+				document.querySelectorAll('#lenMaxLabel').forEach(lenMaxLabel => {
+					lenMaxLabel.textContent = values[1];
+				});
+			}
+		});
+	});
+</script>
 
 <%- include('_partial/footer_scripts'); %>
 

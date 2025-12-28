@@ -704,27 +704,140 @@ export default async function (app: FastifyInstance) {
             return reply.redirect('/', 302);
         }
 
+        const {
+            page: pageParam = "1",
+            limit: limitParam = "25",
+            sort = "name",
+            order = "asc",
+            name,
+            crc,
+            lenMin, lenMax,
+            timestampMin, timestampMax,
+            timestamp2Min, timestamp2Max
+        } = req.query as {
+            page?: string,
+            limit?: string,
+            sort?: "name" | "crc" | "len" | "timestamp" | "timestamp2",
+            order?: "asc" | "desc",
+            name?: string,
+            crc?: string,
+            lenMin?: string, lenMax?: string,
+            timestampMin?: string, timestampMax?: string,
+            timestamp2Min?: string, timestamp2Max?: string
+        };
+        const page = parseInt(pageParam), limit = parseInt(limitParam);
+
         const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
             .selectFrom('game')
             .selectAll()
             .where('name', '=', gameName)
         );
 
-        const data = await db
+        let baseQuery = db
             .selectFrom('data_raw')
             .select(['name', 'crc', 'len', 'timestamp', 'timestamp2'])
+            .where('game_id', '=', game.id);
+
+        // Filter by name
+        if (name && name.trim() !== '') {
+            const term = `%${name.trim()}%`;
+            baseQuery = baseQuery.where('name', 'like', term);
+        }
+
+        // Filter by crc
+        if (crc && !isNaN(parseInt(crc))) {
+            const crcVal = parseInt(crc);
+            baseQuery = baseQuery.where('crc', '=', crcVal);
+        }
+
+        // Filter by len
+        if (lenMin && !isNaN(parseInt(lenMin))) {
+            baseQuery = baseQuery.where('len', '>=', parseInt(lenMin));
+        }
+        if (lenMax && !isNaN(parseInt(lenMax))) {
+            baseQuery = baseQuery.where('len', '<=', parseInt(lenMax));
+        }
+
+        // Filter by timestamp
+        if (timestampMin) {
+            const tsMin = new Date(timestampMin);
+            if (!isNaN(tsMin.getTime())) {
+            baseQuery = baseQuery.where('timestamp', '>=', tsMin);
+            }
+        }
+        if (timestampMax) {
+            const tsMax = new Date(timestampMax);
+            if (!isNaN(tsMax.getTime())) {
+            baseQuery = baseQuery.where('timestamp', '<=', tsMax);
+            }
+        }
+
+        // Filter by timestamp2
+        if (timestamp2Min) {
+            const ts2Min = new Date(timestamp2Min);
+            if (!isNaN(ts2Min.getTime())) {
+            baseQuery = baseQuery.where('timestamp2', '>=', ts2Min);
+            }
+        }
+        if (timestamp2Max) {
+            const ts2Max = new Date(timestamp2Max);
+            if (!isNaN(ts2Max.getTime())) {
+            baseQuery = baseQuery.where('timestamp2', '<=', ts2Max);
+            }
+        }
+
+        // Get max len value for filter UI
+        const lenMaxRow = await db
+            .selectFrom('data_raw')
+            .select(db.fn.max('len').as('max'))
             .where('game_id', '=', game.id)
-            .orderBy('name', 'asc')
-            .orderBy('timestamp', 'asc')
+            .executeTakeFirst();
+        const lenMaxRowCount = lenMaxRow?.max ?? 0;
+
+        // Sort
+        baseQuery = baseQuery
+            .orderBy(sort, order)
+            .orderBy('timestamp', 'asc');
+
+        const data = await baseQuery
+            .limit(limit)
+            .offset((page - 1) * limit)
             .execute();
 
+        const totalRecords = await db
+            .selectFrom(baseQuery.as('d'))
+            .select(db.fn.countAll().as('count'))
+            .executeTakeFirst();
+        const totalPages = Math.ceil(Number(totalRecords?.count ?? 0) / (limit || 1));
+
         const timeTaken = Date.now() - start;
+
         return reply.view('caches/files', {
+            buildQueryString,
             title: `All ${game.display_name} Cache Files`,
             game,
             data,
             stats: {
                 timeTaken
+            },
+            pagination: {
+                page,
+                limit,
+                totalRecords: totalRecords?.count,
+                totalPages
+            },
+            filters: {
+                ...(sort !== undefined && { sort }),
+                ...(order !== undefined && { order }),
+                ...(name && { name }),
+                ...(crc && { crc }),
+                ...(timestampMin && { timestampMin }),
+                ...(timestampMax && { timestampMax }),
+                ...(timestamp2Min && { timestamp2Min }),
+                ...(timestamp2Max && { timestamp2Max }),
+                lenMaxRow: lenMaxRowCount,
+                lenMin: lenMin !== undefined ? parseInt(lenMin, 10) : 0,
+                lenMax: lenMax !== undefined ? parseInt(lenMax, 10) : lenMaxRowCount,
             }
         });
     });

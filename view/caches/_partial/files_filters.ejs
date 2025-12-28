@@ -1,0 +1,142 @@
+<form method="get"
+			action="/caches/files/<%= game.name %>">
+	<div class="flex flex-col gap-6 pt-3 md:pt-0">
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="name">
+				File Name
+			</label>
+
+			<input type="text"
+						 class="input"
+						 name="name"
+						 id="name"
+						 placeholder="Search..."
+						 value="<%= filters.name || '' %>">
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="crc">
+				CRC
+			</label>
+
+			<input type="text"
+						 class="input"
+						 name="crc"
+						 id="crc"
+						 placeholder=""
+						 value="<%= filters.crc || '' %>">
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="timestampMin">
+				First Seen
+			</label>
+
+			<div class="flex flex-col sm:flex-row sm:items-center gap-2">
+				<input type="date"
+							 name="timestampMin"
+							 id="timestampMin"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestampMin || '' %>">
+
+				<span class="text-sm text-gray-400 whitespace-nowrap hidden sm:inline">to</span>
+
+				<input type="date"
+							 name="timestampMax"
+							 id="timestampMax"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestampMax || '' %>">
+			</div>
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="timestamp2Min">
+				Last Seen
+			</label>
+
+			<div class="flex flex-col sm:flex-row sm:items-center gap-2">
+				<input type="date"
+							 name="timestamp2Min"
+							 id="timestamp2Min"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestamp2Min || '' %>">
+
+				<span class="text-sm text-gray-400 whitespace-nowrap hidden sm:inline">to</span>
+
+				<input type="date"
+							 name="timestamp2Max"
+							 id="timestamp2Max"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestamp2Max || '' %>">
+			</div>
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="lenMin">
+				File Size
+			</label>
+
+			<div class="flex justify-between mb-2">
+				<span class="text-sm text-gray-400">
+					Min:
+					<span id="lenMinLabel">
+						<%- filters.lenMin %>
+					</span>
+				</span>
+
+				<span class="text-sm text-gray-400">
+					Max:
+					<span id="lenMaxLabel">
+						<%- filters.lenMax %>
+					</span>
+				</span>
+			</div>
+
+			<div id="len"></div>
+
+			<input type="hidden"
+						 name="lenMin"
+						 id="lenMin"
+						 value="<%- filters.lenMin %>" />
+
+			<input type="hidden"
+						 name="lenMax"
+						 id="lenMax"
+						 value="<%- filters.lenMax %>" />
+		</div>
+
+		<% if (filters && filters.sort) { %>
+		<input type="hidden"
+					 name="sort"
+					 value="<%= filters.sort || '' %>">
+		<% } %>
+
+		<% if (filters && filters.order) { %>
+		<input type="hidden"
+					 name="order"
+					 value="<%= filters.order %>">
+		<% } %>
+
+		<input type="hidden"
+					 name="limit"
+					 value="<%= pagination.limit || '' %>">
+
+		<button type="submit"
+						class="btn btn-success mt-3">
+			Apply Filters
+		</button>
+	</div>
+</form>
