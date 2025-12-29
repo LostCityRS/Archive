@@ -306,6 +306,23 @@ export default async function (app: FastifyInstance) {
             return reply.redirect('/', 302);
         }
 
+        const {
+            page: pageParam = "1",
+            limit: limitParam = "25",
+            sort = "name",
+            order = "asc",
+            name,
+            crc
+        } = req.query as {
+            page?: string,
+            limit?: string,
+            sort?: "name" | "crc" | "len" | "timestamp" | "timestamp2",
+            order?: "asc" | "desc",
+            name?: string,
+            crc?: string
+        };
+        const page = parseInt(pageParam), limit = parseInt(limitParam);
+
         const cache = await getCache(id);
 
         const clients = await db
@@ -319,8 +336,10 @@ export default async function (app: FastifyInstance) {
             .execute();
 
         let data: any[] = [];
+        let totalRecords: { count: number } | null = null;
+        let totalPages = 0;
         if (!cache.versioned) {
-            data = await cacheExecute(`cache_raw_${id}`, db
+            let baseQuery = db
                 .selectFrom('cache_raw')
                 .leftJoin(
                     'data_raw',
@@ -330,12 +349,46 @@ export default async function (app: FastifyInstance) {
                         .onRef('data_raw.crc', '=', 'cache_raw.crc')
                 )
                 .select(['cache_raw.name', 'cache_raw.crc', 'data_raw.len', 'data_raw.timestamp', 'data_raw.timestamp2'])
-                .where('cache_id', '=', cache.id)
+                .where('cache_id', '=', cache.id);
+
+            // Filter by name
+            if (name && name.trim() !== '') {
+                const term = `%${name.trim()}%`;
+                baseQuery = baseQuery.where('cache_raw.name', 'like', term);
+            }
+
+            // Filter by crc
+            if (crc && !isNaN(parseInt(crc))) {
+                const crcVal = parseInt(crc);
+                baseQuery = baseQuery.where('cache_raw.crc', '=', crcVal);
+            }
+
+            baseQuery = baseQuery.orderBy(sort, order);
+
+            const cacheKey = [
+                `cache_raw_${id}`,
+                `page_${page}`,
+                `limit_${limit}`,
+                `sort_${sort}`,
+                `order_${order}`,
+                `name_${name}`,
+                `crc_${crc}`
+            ].join('_');
+
+            data = await cacheExecute(cacheKey, 
+                baseQuery.limit(limit).offset((page - 1) * limit)
             );
+
+            totalRecords = await cacheExecuteTakeFirst(`${cacheKey}_totalrecords`,
+                db.selectFrom(baseQuery.as('g'))
+                    .select(db.fn.countAll().as('count'))
+            );
+            totalPages = totalRecords ? Math.ceil(totalRecords.count / limit) : 0;
         }
 
         const timeTaken = Date.now() - start;
         return reply.view('caches/build', {
+            buildQueryString,
             cache,
             clients,
             data,
@@ -346,7 +399,19 @@ export default async function (app: FastifyInstance) {
             breadcrumbs: [
                 { label: 'Caches', href: '/' },
                 { label: `${cache.display_name} Caches`, href: `/caches/list/${cache.name}` }
-            ]
+            ],
+            pagination: {
+                page,
+                limit,
+                totalRecords: totalRecords?.count,
+                totalPages
+            },
+            filters: {
+                ...(name && { name }),
+                ...(crc && { crc }),
+                sort,
+                order
+            }
         });
     });
 

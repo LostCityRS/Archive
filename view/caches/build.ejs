@@ -108,31 +108,180 @@
 				<div class="flex flex-col gap-3">
 					<h2 class="text-2xl text-harvest-gold-300 font-medium">Files</h2>
 
-					<% if (data.length > 0) { %>
+					<div class="rounded-field border border-base-content/5 bg-base-300">
+						<form class="flex flex-wrap items-center py-2 px-4 gap-2"
+									method="get"
+									action="/caches/<%= cache.id %>">
+							<h3>Filters</h3>
 
-					<% for (const file of data) { %>
-					<% if (file.len !== null) { %>
+							<input type="text"
+										 class="input w-48"
+										 name="name"
+										 id="name"
+										 placeholder="File Name..."
+										 value="<%= filters.name || '' %>">
 
-					<%- include('_component/file_download', {
-						icon: 'file',
-						name: file.name,
-						href: `/caches/${cache.id}/get/${file.name}`,
-						crc: file.crc,
-						timestamp: file.timestamp,
-						timestamp2: file.timestamp2,
-						fileSize: file.len,
-						size: 'sm'
-					}) %>
+							<input type="text"
+										 class="input w-48"
+										 name="crc"
+										 id="crc"
+										 placeholder="File CRC..."
+										 value="<%= filters.crc || '' %>">
 
-					<% } %>
-					<% } %>
-					<% } else { %>
+							<% if (filters && filters.sort) { %>
+							<input type="hidden"
+										 name="sort"
+										 value="<%= filters.sort || '' %>">
+							<% } %>
 
-					<div class="text-siam-300">
-						No files are available for download in this cache.
+							<% if (filters && filters.order) { %>
+							<input type="hidden"
+										 name="order"
+										 value="<%= filters.order %>">
+							<% } %>
+
+							<input type="hidden"
+										 name="limit"
+										 value="<%= pagination.limit || '' %>">
+
+							<button type="submit"
+											class="btn btn-primary btn-sm">
+								<i data-lucide="search"
+									 class="size-4"></i>
+							</button>
+
+							<% const hasFilters = filters && (filters.name || filters.crc); %>
+
+							<% if (hasFilters) { %>
+							<a class="btn btn-sm btn-ghost"
+								 href="/caches/<%= cache.id %>">
+								<i data-lucide="x"
+									 class="size-4"></i>
+								Clear
+							</a>
+							<% } %>
+						</form>
+
+						<div class="relative overflow-x-auto">
+							<table class="table table-zebra">
+								<thead>
+									<tr class="bg-base-100">
+										<th scope="col"
+												class="font-medium!">
+											<%- include('_component/sort_header', { 
+											sort: 'name', 
+											label: 'File Name', 
+											filters: filters, 
+											filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+											defaultSort: 'name', 
+											defaultOrder: 'asc' }) 
+										%>
+										</th>
+										<th scope="col"
+												class="font-medium!">
+											<%- include('_component/sort_header', { 
+											sort: 'crc', 
+											label: 'CRC', 
+											filters: filters, 
+											filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+											defaultSort: 'name', 
+											defaultOrder: 'asc' }) 
+										%>
+										</th>
+										<th scope="col"
+												class="font-medium!">
+											<%- include('_component/sort_header', { 
+											sort: 'timestamp', 
+											label: 'First Seen', 
+											filters: filters, 
+											filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+											defaultSort: 'name', 
+											defaultOrder: 'asc' }) 
+										%>
+										</th>
+										<th scope="col"
+												class="font-medium!">
+											<%- include('_component/sort_header', { 
+											sort: 'timestamp2', 
+											label: 'Last Seen', 
+											filters: filters, 
+											filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+											defaultSort: 'name', 
+											defaultOrder: 'asc' }) 
+										%>
+										</th>
+										<th scope="col"
+												class="font-medium!">
+											<%- include('_component/sort_header', { 
+											sort: 'len', 
+											label: 'File Size', 
+											filters: filters, 
+											filtersQuery: buildQueryString(filters, ['sort', 'order']), 
+											defaultSort: 'name', 
+											defaultOrder: 'asc' }) 
+										%>
+										</th>
+										<th scope="col">
+										</th>
+									</tr>
+								</thead>
+								<tbody>
+									<% for (file of data) { %>
+									<tr>
+										<td class="w-0 whitespace-nowrap">
+											<i data-lucide="file"
+												 class="size-5 mr-1 inline align-text-bottom text-siam-300"></i>
+											<%= file.name %>
+										</td>
+										<td class="text-siam-300">
+											<%= file.crc %>
+										</td>
+										<td class="w-0 whitespace-nowrap">
+											<% if (file.timestamp != undefined) { %>
+											<%= file.timestamp.toISOString().replace('T', ' ').split('.')[0] %>
+											<% } else { %>
+											-
+											<% } %>
+										</td>
+										<td class="w-0 whitespace-nowrap">
+											<% if (file.timestamp2 != undefined) { %>
+											<%= file.timestamp2.toISOString().replace('T', ' ').split('.')[0] %>
+											<% } else { %>
+											-
+											<% } %>
+										</td>
+										<td class="w-0 whitespace-nowrap">
+											<% if (file.len !== null) { %>
+											<%- include('_component/format_size', { bytes: file.len }) %>
+											<% } %>
+										</td>
+										<td class="w-0 whitespace-nowrap">
+											<a class="btn btn-sm btn-success"
+												 href="/caches/<%= cache.id %>/get/<%= file.name %>">
+												<i data-lucide="download"
+													 class="size-4"></i>
+												Download
+											</a>
+										</td>
+									</tr>
+									<% } %>
+									<% if (data.length === 0) { %>
+										<tr>
+											<td colspan="6" class="text-center text-siam-300">
+												No files found.
+											</td>
+										</tr>
+									<% } %>
+								</tbody>
+							</table>
+						</div>
+
+						<%- include('_component/pagination', { 
+							pagination,
+							filters: filters,
+							filtersQuery: buildQueryString(filters, ['page'])
+						}); %>
 					</div>
-
-					<% } %>
 
 				</div>
 				<% } %>
