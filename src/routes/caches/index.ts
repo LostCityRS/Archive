@@ -266,33 +266,113 @@ export default async function (app: FastifyInstance) {
             return reply.redirect('/', 302);
         }
 
+        const {
+            page: pageParam = "1",
+            limit: limitParam = "25",
+            sort = "build",
+            order = "asc",
+            build,
+            timestampMin,
+            timestampMax
+        } = req.query as {
+            page?: string,
+            limit?: string,
+            sort?: "build" | "timestamp" | "newspost",
+            order?: "asc" | "desc",
+            build?: string,
+            timestampMin?: string,
+            timestampMax?: string
+        };
+        const page = parseInt(pageParam), limit = parseInt(limitParam);
+
         const game = await cacheExecuteTakeFirstOrThrow(`game_${gameName}`, db
             .selectFrom('game')
             .selectAll()
             .where('name', '=', gameName)
         );
 
-        const caches = await cacheExecute(`caches_${gameName}`, db
-            .selectFrom('cache')
+        const cacheKey = [
+            `caches_${gameName}`,
+            `page_${pageParam}`,
+            `limit_${limitParam}`,
+            `sort_${sort}`,
+            `order_${order}`,
+            `build_${build}`,
+            `timestampMin_${timestampMin}`,
+            `timestampMax_${timestampMax}`
+        ].join('_');
+
+        let baseQuery = db
+        .selectFrom('cache')
             .selectAll()
+            .where('game_id', '=', game.id);
+
+        // Filter by build
+        if (build && build.trim() !== '') {
+            baseQuery = baseQuery.where('build', 'like', `%${build.trim()}%`);
+        }
+
+        // Filter by timestamp
+        if (timestampMin) {
+            const tsMin = new Date(timestampMin);
+            if (!isNaN(tsMin.getTime())) {
+            baseQuery = baseQuery.where('timestamp', '>=', tsMin);
+            }
+        }
+        if (timestampMax) {
+            const tsMax = new Date(timestampMax);
+            if (!isNaN(tsMax.getTime())) {
+            baseQuery = baseQuery.where('timestamp', '<=', tsMax);
+            }
+        }
+
+        // Get builds for filter UI
+        const builds = await cacheExecute(`caches_${gameName}_builds`, db
+            .selectFrom('cache')
+            .select('build')
             .where('game_id', '=', game.id)
+            .groupBy('build')
         );
 
-        // sort build as a revision
-        caches.sort((a: any, b: any) => a.build.indexOf('-') === -1 && b.build.indexOf('-') === -1 ? parseInt(a.build) - parseInt(b.build) : 0);
-        // sort build as a date
-        caches.sort((a: any, b: any) => a.build.indexOf('-') !== -1 && b.build.indexOf('-') !== -1 ? new Date(a.build).valueOf() - new Date(b.build).valueOf() : 0);
+        // Sort
+        baseQuery = baseQuery.orderBy(sort, order);
+
+        const caches = await cacheExecute(cacheKey, 
+            baseQuery.limit(limit).offset((page - 1) * limit)
+        );
+        
+        const totalRecords = await cacheExecuteTakeFirst(`caches_${gameName}_totalrecords`, 
+            db.selectFrom(baseQuery.as('d'))
+                .select(db.fn.countAll().as('count'))
+        );
+        const totalPages = Math.ceil(Number(totalRecords?.count ?? 0) / (limit || 1));
 
         const timeTaken = Date.now() - start;
         return reply.view('caches/list', {
+            buildQueryString,
             game,
             caches,
+            builds,
+            build,
             stats: {
                 timeTaken
             },
             title: `${game.display_name} Caches`,
             icon: 'database-zap',
-            breadcrumbs: [{ label: 'Caches', href: '/caches/list' }]
+            breadcrumbs: [{ label: 'Caches', href: '/caches/list' }],
+            pagination: {
+                page,
+                limit,
+                totalRecords: totalRecords?.count,
+                totalPages
+            },
+            filters: {
+                ...(build && { build }),
+                ...(timestampMin && { timestampMin }),
+                ...(timestampMax && { timestampMax }),
+                sort,
+                order
+            }
         });
     });
 

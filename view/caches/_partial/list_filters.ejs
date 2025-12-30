@@ -1,0 +1,72 @@
+<form method="get"
+			action="/caches/list/<%= game.name %>">
+	<div class="flex flex-col gap-6 pt-3 md:pt-0">
+		<div>
+
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="game">
+				Build
+			</label>
+
+			<input type="text"
+						 class="input"
+						 name="build"
+						 id="build"
+						 placeholder="Search builds..."
+						 list="builds"
+						 value="<%= filters.build || '' %>">
+
+			<datalist id="builds">
+				<% for (const build of builds) { %>
+				<option value="<%= build.build %>"><%= build.build %></option>
+				<% } %>
+			</datalist>
+		</div>
+
+		<hr class="border-white/20" />
+
+		<div>
+			<label class="label mb-2 text-lg text-siam-200"
+						 for="timestampMin">
+				Timestamp
+			</label>
+
+			<div class="flex flex-col sm:flex-row sm:items-center gap-2">
+				<input type="date"
+							 name="timestampMin"
+							 id="timestampMin"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestampMin || '' %>">
+
+				<span class="text-sm text-gray-400 whitespace-nowrap hidden sm:inline">to</span>
+
+				<input type="date"
+							 name="timestampMax"
+							 id="timestampMax"
+							 class="input input-sm w-full sm:flex-1 min-w-0 [&::-webkit-calendar-picker-indicator]:hidden"
+							 value="<%= filters.timestampMax || '' %>">
+			</div>
+		</div>
+
+		<% if (filters && filters.sort) { %>
+		<input type="hidden"
+					 name="sort"
+					 value="<%= filters.sort || '' %>">
+		<% } %>
+
+		<% if (filters && filters.order) { %>
+		<input type="hidden"
+					 name="order"
+					 value="<%= filters.order %>">
+		<% } %>
+
+		<input type="hidden"
+					 name="limit"
+					 value="<%= pagination.limit || '' %>">
+
+		<button type="submit"
+						class="btn btn-success mt-3">
+			Apply Filters
+		</button>
+	</div>
+</form>
